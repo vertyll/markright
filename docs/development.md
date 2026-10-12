@@ -15,9 +15,11 @@ bash scripts/check.sh
 4. `cargo doc`, which fails on a broken link or tag in the API documentation;
 5. `markright run` on this repository's own documents.
 
-The lints are set once, in `[workspace.lints]` of `Cargo.toml`, and every crate takes them; a warning fails the
-checks. CI runs the same script on every push and pull request to `main`, and on every tag, with the WebAssembly
-target installed.
+The version of Rust is pinned in `rust-toolchain.toml`, so the checks run with the same compiler and the same lints
+here and in CI; `rustup install` fetches it. Raising it is a change of its own, together with `rust-version` in
+`Cargo.toml`. The lints are set once, in `[workspace.lints]` of `Cargo.toml`, and every crate takes them; a warning
+fails the checks. CI runs the same script on every push and pull request to `main`, and on every tag, with the
+WebAssembly target installed.
 
 Every script in `scripts/` says at its top what it does, how to call it and what it needs. They are Bash, so the
 same file runs everywhere: on Windows, run them in Git Bash, which comes with Git, or in WSL.

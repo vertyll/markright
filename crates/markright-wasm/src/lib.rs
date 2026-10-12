@@ -80,7 +80,7 @@ pub fn check(markdown: &str, configuration: &str) -> Result<Outcome, CheckError>
 
 /// The export to the page: [`check`], with its outcome as a JavaScript object.
 #[cfg(target_arch = "wasm32")]
-mod exports {
+pub mod exports {
 	use wasm_bindgen::prelude::*;
 
 	/// Checks `markdown` with `configuration` and returns the outcome as an object.

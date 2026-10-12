@@ -1,0 +1,49 @@
+[workspace]
+resolver = "3"
+members = ["crates/markright", "crates/markright-cli", "crates/markright-wasm", "xtask"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+authors = ["Mikołaj Gawron <gawrmiko@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/vertyll/markright"
+
+[workspace.dependencies]
+markright = { path = "crates/markright", version = "0.1.0", default-features = false }
+cap-std = "4.0.3"
+clap = { version = "4.6.7", features = ["derive"] }
+ctrlc = "3.5.2"
+percent-encoding = "2.3.2"
+proptest = "1.12.0"
+pulldown-cmark = { version = "0.13.4", default-features = false }
+quick-xml = "0.42.0"
+rayon = "1.12.0"
+schemars = { version = "1.2.2", features = ["preserve_order"] }
+regex = "1.13.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde-saphyr = "1.3.0"
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+serde-wasm-bindgen = "0.6.5"
+tempfile = "3.27.0"
+thiserror = "2.0"
+toml = { version = "1.1.6", default-features = false, features = ["parse", "serde"] }
+wasm-bindgen = "0.2.129"
+unicode-properties = { version = "0.1.4", default-features = false, features = ["general-category"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+# Every document linter has the signature Check::Document takes, which lets the links linter fail on a disk error.
+unnecessary_wraps = "allow"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

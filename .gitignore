@@ -1,0 +1,18 @@
+### IDE ###
+.idea/
+.vscode/
+*.iml
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Rust ###
+/target/
+
+### Reports ###
+lcov.info
+*.profraw
+
+### SonarQube ###
+.scannerwork/

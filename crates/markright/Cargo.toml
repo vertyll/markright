@@ -1,0 +1,40 @@
+[package]
+name = "markright"
+description = "Formats and lints the Markdown of a repository: the library behind the markright command and playground"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["markdown", "linter", "formatter"]
+categories = ["development-tools", "text-processing"]
+
+[features]
+default = ["disk", "parallel"]
+# Checks a repository on disk: lists its documents through Git and writes what the formatters change.
+disk = ["dep:cap-std"]
+# Spreads the documents over every core.
+parallel = ["dep:rayon"]
+
+[dependencies]
+cap-std = { workspace = true, optional = true }
+percent-encoding.workspace = true
+pulldown-cmark.workspace = true
+quick-xml.workspace = true
+rayon = { workspace = true, optional = true }
+regex.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde-saphyr.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+unicode-properties.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

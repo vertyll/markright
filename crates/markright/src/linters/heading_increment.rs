@@ -1,0 +1,25 @@
+use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, V0_1_0};
+use crate::Error;
+use crate::issue::Finding;
+use crate::markdown::Document;
+
+pub(super) struct HeadingIncrement;
+
+impl DocumentLinter for HeadingIncrement {
+	fn about(&self) -> About {
+		About {
+			name: "heading-increment",
+			description: "a heading is at most one level deeper than the heading before it",
+			since: V0_1_0,
+			example: Example::new("# Guide\n\n### Install\n", EXAMPLE_GUIDE.1),
+		}
+	}
+
+	fn check(&self, _: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
+		let jumps = doc.headings.windows(2).filter(|pair| pair[1].level > pair[0].level + 1);
+		let message = |from: u8, to: u8| format!("heading level jumps from {from} to {to}");
+		Ok(jumps
+			.map(|pair| Finding::new(path, pair[1].line, message(pair[0].level, pair[1].level)))
+			.collect())
+	}
+}

@@ -1,0 +1,32 @@
+use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, V0_1_0};
+use crate::Error;
+use crate::issue::Finding;
+use crate::markdown::Document;
+
+pub(super) struct UnusedDefinitions;
+
+impl DocumentLinter for UnusedDefinitions {
+	fn about(&self) -> About {
+		About {
+			name: "unused-definitions",
+			description: "every reference definition is used by a reference link",
+			since: V0_1_0,
+			example: Example::new(
+				"See the [guide].\n\n[guide]: docs/guide.md\n[old]: docs/old.md\n",
+				"See the [guide].\n\n[guide]: docs/guide.md\n",
+			)
+			.with_files(&[EXAMPLE_GUIDE]),
+		}
+	}
+
+	fn check(&self, _: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
+		let mut out: Vec<Finding> = doc
+			.definitions
+			.iter()
+			.filter(|(label, _)| !doc.used_labels.contains(*label))
+			.map(|(label, def)| Finding::new(path, def.line, format!("unused definition: [{label}]")))
+			.collect();
+		out.sort_by_key(|issue| issue.line);
+		Ok(out)
+	}
+}

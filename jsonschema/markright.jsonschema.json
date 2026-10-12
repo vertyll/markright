@@ -1,0 +1,649 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/vertyll/markright/main/jsonschema/markright.jsonschema.json",
+  "title": "markright configuration",
+  "description": "The configuration file: which formatters and linters run, their settings, their exclusions and where issues are\nwritten.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "The configuration format version.",
+      "type": "string",
+      "const": "1"
+    },
+    "output": {
+      "description": "Where markright run writes issues; text to stdout when no format is set.",
+      "$ref": "#/$defs/Output",
+      "default": {
+        "formats": {
+          "text": {
+            "path": "stdout"
+          },
+          "checkstyle": null,
+          "sarif": null
+        }
+      }
+    },
+    "linters": {
+      "description": "The linters that run, their settings and exclusions.",
+      "$ref": "#/$defs/Linters",
+      "default": {
+        "default": "all",
+        "enable": [],
+        "disable": [],
+        "settings": {
+          "line-length": {
+            "max": 120
+          },
+          "index": {
+            "file": "CONTENTS.md"
+          },
+          "readme-links": {
+            "file": "README.md",
+            "links": [
+              "CONTENTS.md",
+              "GLOSSARY.md",
+              "STANDARDS.md"
+            ]
+          },
+          "alerts": {
+            "types": [
+              "NOTE",
+              "TIP",
+              "IMPORTANT",
+              "WARNING",
+              "CAUTION"
+            ]
+          }
+        },
+        "exclusions": {
+          "warn-unused": false,
+          "paths": [],
+          "paths-except": [],
+          "rules": []
+        }
+      }
+    },
+    "formatters": {
+      "description": "The formatters that run, their settings and exclusions.",
+      "$ref": "#/$defs/Formatters",
+      "default": {
+        "default": "all",
+        "enable": [],
+        "disable": [],
+        "settings": {
+          "list-marker": {
+            "marker": "-"
+          }
+        },
+        "exclusions": {
+          "warn-unused": false,
+          "paths": [],
+          "paths-except": []
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "version"
+  ],
+  "$defs": {
+    "Output": {
+      "description": "Where `markright run` writes issues.",
+      "type": "object",
+      "properties": {
+        "formats": {
+          "description": "One entry per output format.",
+          "$ref": "#/$defs/Formats",
+          "default": {
+            "text": {
+              "path": "stdout"
+            },
+            "checkstyle": null,
+            "sarif": null
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Formats": {
+      "description": "Where each output format goes; a format without one is not written. With none set, text goes to the standard\noutput.",
+      "type": "object",
+      "properties": {
+        "text": {
+          "description": "One issue per line, then a summary.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Format"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "checkstyle": {
+          "description": "Checkstyle XML.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Format"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sarif": {
+          "description": "SARIF 2.1.0, for tools that read static analysis results.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Format"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false
+    },
+    "Format": {
+      "description": "Where one output format goes.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "stdout, stderr, or a file path relative to the working directory.",
+          "$ref": "#/$defs/Destination"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "path"
+      ]
+    },
+    "Destination": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Linters": {
+      "description": "The linters that run, their settings and which issues to drop.",
+      "type": "object",
+      "properties": {
+        "default": {
+          "description": "The starting set: every linter, or none.",
+          "$ref": "#/$defs/Selection",
+          "default": "all"
+        },
+        "enable": {
+          "description": "Linters added to the default set.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "links",
+              "anchors",
+              "unused-definitions",
+              "alerts",
+              "blockquotes",
+              "fences",
+              "fence-language",
+              "heading-increment",
+              "image-alt",
+              "table-columns",
+              "line-length",
+              "index",
+              "readme-links"
+            ]
+          },
+          "uniqueItems": true,
+          "default": []
+        },
+        "disable": {
+          "description": "Linters removed from the default set.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "links",
+              "anchors",
+              "unused-definitions",
+              "alerts",
+              "blockquotes",
+              "fences",
+              "fence-language",
+              "heading-increment",
+              "image-alt",
+              "table-columns",
+              "line-length",
+              "index",
+              "readme-links"
+            ]
+          },
+          "uniqueItems": true,
+          "default": []
+        },
+        "settings": {
+          "description": "The settings of the linters that take any.",
+          "$ref": "#/$defs/LinterSettings",
+          "default": {
+            "line-length": {
+              "max": 120
+            },
+            "index": {
+              "file": "CONTENTS.md"
+            },
+            "readme-links": {
+              "file": "README.md",
+              "links": [
+                "CONTENTS.md",
+                "GLOSSARY.md",
+                "STANDARDS.md"
+              ]
+            },
+            "alerts": {
+              "types": [
+                "NOTE",
+                "TIP",
+                "IMPORTANT",
+                "WARNING",
+                "CAUTION"
+              ]
+            }
+          }
+        },
+        "exclusions": {
+          "description": "The documents no linter reports on, and the issues to drop.",
+          "$ref": "#/$defs/LinterExclusions",
+          "default": {
+            "warn-unused": false,
+            "paths": [],
+            "paths-except": [],
+            "rules": []
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Selection": {
+      "description": "The starting set of a section: every rule, or none.",
+      "oneOf": [
+        {
+          "description": "Every rule runs unless disabled.",
+          "type": "string",
+          "const": "all"
+        },
+        {
+          "description": "Only the enabled rules run.",
+          "type": "string",
+          "const": "none"
+        }
+      ]
+    },
+    "LinterSettings": {
+      "description": "The settings of the linters, by linter.",
+      "type": "object",
+      "properties": {
+        "line-length": {
+          "description": "The settings of line-length.",
+          "$ref": "#/$defs/LineLength",
+          "default": {
+            "max": 120
+          }
+        },
+        "index": {
+          "description": "The settings of index.",
+          "$ref": "#/$defs/Index",
+          "default": {
+            "file": "CONTENTS.md"
+          }
+        },
+        "readme-links": {
+          "description": "The settings of readme-links.",
+          "$ref": "#/$defs/ReadmeLinks",
+          "default": {
+            "file": "README.md",
+            "links": [
+              "CONTENTS.md",
+              "GLOSSARY.md",
+              "STANDARDS.md"
+            ]
+          }
+        },
+        "alerts": {
+          "description": "The settings of alerts.",
+          "$ref": "#/$defs/Alerts",
+          "default": {
+            "types": [
+              "NOTE",
+              "TIP",
+              "IMPORTANT",
+              "WARNING",
+              "CAUTION"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "LineLength": {
+      "description": "The settings of line-length.",
+      "type": "object",
+      "properties": {
+        "max": {
+          "description": "The longest line allowed, in characters.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 1,
+          "default": 120
+        }
+      },
+      "additionalProperties": false
+    },
+    "Index": {
+      "description": "The settings of index.",
+      "type": "object",
+      "properties": {
+        "file": {
+          "description": "The document that must link every other one.",
+          "type": "string",
+          "default": "CONTENTS.md"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReadmeLinks": {
+      "description": "The settings of readme-links.",
+      "type": "object",
+      "properties": {
+        "file": {
+          "description": "The README.",
+          "type": "string",
+          "default": "README.md"
+        },
+        "links": {
+          "description": "Documents the README must link, when they exist.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "CONTENTS.md",
+            "GLOSSARY.md",
+            "STANDARDS.md"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Alerts": {
+      "description": "The settings of alerts.",
+      "type": "object",
+      "properties": {
+        "types": {
+          "description": "Allowed alert types.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "NOTE",
+            "TIP",
+            "IMPORTANT",
+            "WARNING",
+            "CAUTION"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "LinterExclusions": {
+      "description": "Which documents no linter reports on and which issues to drop.",
+      "type": "object",
+      "properties": {
+        "warn-unused": {
+          "description": "Warn about paths and rules that exclude nothing.",
+          "type": "boolean",
+          "default": false
+        },
+        "paths": {
+          "description": "Documents no linter reports on.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Pattern"
+          },
+          "default": []
+        },
+        "paths-except": {
+          "description": "When set, documents that match none of these are excluded.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Pattern"
+          },
+          "default": []
+        },
+        "rules": {
+          "description": "Issues to drop.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExclusionRule"
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "Pattern": {
+      "description": "A regular expression, matched anywhere.",
+      "type": "string",
+      "format": "regex",
+      "minLength": 1
+    },
+    "ExclusionRule": {
+      "description": "Drops an issue that matches every field set; at least two of path or path-except, linters and text.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "The document path matches.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pattern"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "path-except": {
+          "description": "The document path does not match.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pattern"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "linters": {
+          "description": "The issue comes from one of these linters.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "links",
+              "anchors",
+              "unused-definitions",
+              "alerts",
+              "blockquotes",
+              "fences",
+              "fence-language",
+              "heading-increment",
+              "image-alt",
+              "table-columns",
+              "line-length",
+              "index",
+              "readme-links"
+            ]
+          },
+          "uniqueItems": true,
+          "default": []
+        },
+        "text": {
+          "description": "The issue message matches.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Pattern"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false
+    },
+    "Formatters": {
+      "description": "The formatters that run, their settings and which documents they leave alone.",
+      "type": "object",
+      "properties": {
+        "default": {
+          "description": "The starting set: every formatter, or none.",
+          "$ref": "#/$defs/Selection",
+          "default": "all"
+        },
+        "enable": {
+          "description": "Formatters added to the default set.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "trailing-whitespace",
+              "arrows",
+              "list-marker",
+              "tables",
+              "blank-lines",
+              "final-newline"
+            ]
+          },
+          "uniqueItems": true,
+          "default": []
+        },
+        "disable": {
+          "description": "Formatters removed from the default set.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "trailing-whitespace",
+              "arrows",
+              "list-marker",
+              "tables",
+              "blank-lines",
+              "final-newline"
+            ]
+          },
+          "uniqueItems": true,
+          "default": []
+        },
+        "settings": {
+          "description": "The settings of the formatters that take any.",
+          "$ref": "#/$defs/FormatterSettings",
+          "default": {
+            "list-marker": {
+              "marker": "-"
+            }
+          }
+        },
+        "exclusions": {
+          "description": "The documents the formatters leave as they are.",
+          "$ref": "#/$defs/FormatterExclusions",
+          "default": {
+            "warn-unused": false,
+            "paths": [],
+            "paths-except": []
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "FormatterSettings": {
+      "description": "The settings of the formatters, by formatter.",
+      "type": "object",
+      "properties": {
+        "list-marker": {
+          "description": "The settings of list-marker.",
+          "$ref": "#/$defs/ListMarker",
+          "default": {
+            "marker": "-"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ListMarker": {
+      "description": "The settings of list-marker.",
+      "type": "object",
+      "properties": {
+        "marker": {
+          "description": "The marker of every item of an unordered list.",
+          "$ref": "#/$defs/Marker",
+          "default": "-"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Marker": {
+      "description": "A marker `CommonMark` allows for an unordered list.",
+      "oneOf": [
+        {
+          "description": "`-`",
+          "type": "string",
+          "const": "-"
+        },
+        {
+          "description": "`*`",
+          "type": "string",
+          "const": "*"
+        },
+        {
+          "description": "`+`",
+          "type": "string",
+          "const": "+"
+        }
+      ]
+    },
+    "FormatterExclusions": {
+      "description": "Which documents the formatters leave as they are.",
+      "type": "object",
+      "properties": {
+        "warn-unused": {
+          "description": "Warn about paths that exclude nothing.",
+          "type": "boolean",
+          "default": false
+        },
+        "paths": {
+          "description": "Documents the formatters leave as they are.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Pattern"
+          },
+          "default": []
+        },
+        "paths-except": {
+          "description": "When set, documents that match none of these are left as they are.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Pattern"
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

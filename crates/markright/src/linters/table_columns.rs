@@ -1,0 +1,36 @@
+use super::{About, Context, DocumentLinter, Example, V0_1_0};
+use crate::Error;
+use crate::issue::Finding;
+use crate::markdown::{Document, table_cells};
+
+pub(super) struct TableColumns;
+
+impl DocumentLinter for TableColumns {
+	fn about(&self) -> About {
+		About {
+			name: "table-columns",
+			description: "a table row has no more cells than the header",
+			since: V0_1_0,
+			example: Example::new(
+				"| Name | Role |\n|---|---|\n| markright | linter | formatter |\n",
+				"| Name | Role |\n|---|---|\n| markright | linter and formatter |\n",
+			),
+		}
+	}
+
+	fn check(&self, _: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
+		let cells = |line: usize| table_cells(&doc.lines[line - 1].text).len();
+		let mut out = Vec::new();
+		for table in &doc.tables {
+			let header = cells(table.header);
+			for &row in &table.body {
+				let n = cells(row);
+				if n > header {
+					let message = format!("row has {n} cells, the header {header}; the extra cells are not shown");
+					out.push(Finding::new(path, row, message));
+				}
+			}
+		}
+		Ok(out)
+	}
+}

@@ -1,0 +1,174 @@
+//! Parses a document with a `CommonMark` and GFM parser and keeps what the formatters and linters work with, by line:
+//! which lines are code, the anchors the document defines, its headings, code blocks, list markers, tables, links,
+//! reference definitions and the reference links nothing defines, the lazy continuation lines of its blockquotes, and
+//! the byte ranges formatters must leave alone.
+
+mod anchors;
+mod destination;
+mod lines;
+mod tables;
+mod walker;
+
+use std::collections::{BTreeMap, HashSet};
+use std::fmt;
+use std::ops::Range;
+
+pub use tables::{is_table_row, table_cells};
+
+/// A parsed Markdown file.
+///
+/// Line numbers are 1-based, as issues report them; indexes into [`Document::lines`] are 0-based.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Document {
+	/// The lines of the file, without their line endings.
+	pub lines: Vec<Line>,
+	/// The anchors a `#fragment` may name: one per heading, numbered when repeated, and the ids of HTML elements.
+	pub anchors: HashSet<String>,
+	/// The headings, in order.
+	pub headings: Vec<Heading>,
+	/// The fenced code blocks, in order.
+	pub fences: Vec<Fence>,
+	/// The markers of the items of unordered lists, in order.
+	pub bullets: Vec<Bullet>,
+	/// The tables, in order.
+	pub tables: Vec<Table>,
+	/// The inline links and images, in the order they start, then the reference definitions.
+	pub links: Vec<Link>,
+	/// The reference definitions, by normalized label; the first of a repeated label wins, as it does in the parse.
+	pub definitions: BTreeMap<String, Definition>,
+	/// The normalized labels that reference links and images resolve through a definition.
+	pub used_labels: HashSet<String>,
+	/// The full and collapsed reference links, `[text][label]` and `[label][]`, whose label nothing defines.
+	pub undefined_references: Vec<Reference>,
+	/// The lines that continue a blockquote's paragraph without starting with `>`.
+	pub lazy_lines: Vec<usize>,
+	/// The line of the first fenced code block that is never closed.
+	pub unclosed_fence: Option<usize>,
+}
+
+/// One line of a document, and what the formatters must know about it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Line {
+	/// The line, without its line ending.
+	pub text: String,
+	/// Whether it belongs to a code block or an HTML block, which no rule treats as prose.
+	pub code: bool,
+	/// The byte ranges formatters leave as written, sorted by start: inline code, inline HTML and link destinations.
+	pub protected: Vec<Range<usize>>,
+}
+
+/// A table: the line of its header and the lines of its body; the delimiter row, right under the header, is not
+/// listed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Table {
+	/// The line of the header row.
+	pub header: usize,
+	/// The lines of the body rows, in order.
+	pub body: Vec<usize>,
+}
+
+/// A heading: its level, 1 to 6, and its line.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Heading {
+	/// From 1 for `#` to 6 for `######`.
+	pub level: u8,
+	/// The line the heading starts on.
+	pub line: usize,
+}
+
+/// A fenced code block: its info string, whose first word names the language, and the line it opens on.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Fence {
+	/// The info string, trimmed; empty when the fence names no language.
+	pub info: String,
+	/// The line of the opening fence.
+	pub line: usize,
+}
+
+/// The marker of an item in an unordered list.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Bullet {
+	/// The line of the item.
+	pub line: usize,
+	/// The byte of the line the marker is at.
+	pub column: usize,
+	/// `-`, `*` or `+`.
+	pub marker: char,
+	/// Whether the list stands right next to another list, which only a different marker keeps apart.
+	pub adjacent: bool,
+}
+
+/// An inline link, an image or a reference definition.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Link {
+	/// The destination, with escapes and entities resolved.
+	pub target: String,
+	/// The line the destination is written on, or the line the link starts on when it writes none.
+	pub line: usize,
+	/// The bytes of `line` the destination is written in, inside any angle brackets; empty when it writes none.
+	pub destination: Range<usize>,
+	/// Whether this is an image.
+	pub image: bool,
+	/// The text of a link or the alternative text of an image, without markup.
+	pub text: String,
+	/// Whether the link or image has any content at all, images included.
+	pub has_content: bool,
+}
+
+/// A reference definition, `[label]: target`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Definition {
+	/// The destination, with escapes and entities resolved.
+	pub target: String,
+	/// The line the definition starts on.
+	pub line: usize,
+}
+
+/// A reference link: the normalized label it names and the line it starts on.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Reference {
+	/// The label, lowercased, with its runs of white space collapsed to one space.
+	pub label: String,
+	/// The line the link starts on.
+	pub line: usize,
+}
+
+impl Document {
+	/// Parses `content`.
+	#[must_use]
+	pub fn parse(content: &str) -> Self {
+		walker::parse(content)
+	}
+}
+
+impl fmt::Display for Document {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		for (i, line) in self.lines.iter().enumerate() {
+			if i > 0 {
+				f.write_str("\n")?;
+			}
+			f.write_str(&line.text)?;
+		}
+		Ok(())
+	}
+}
+
+/// Whether a link target leaves the repository: a URL with a scheme, or a mail address.
+#[must_use]
+pub fn is_external(target: &str) -> bool {
+	target.contains("://") || target.starts_with("mailto:")
+}
+
+/// A line of Markdown whose only markup is code spans, as text: the code spans lose their backticks.
+#[must_use]
+pub fn plain(markdown: &str) -> String {
+	markdown.replace('`', "")
+}
+
+/// Lowercases a reference label and collapses its runs of white space, as matching labels does.
+pub(crate) fn normalize_label(label: &str) -> String {
+	label.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+}
+
+#[cfg(test)]
+mod tests;

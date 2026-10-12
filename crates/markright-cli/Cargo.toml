@@ -1,0 +1,27 @@
+[package]
+name = "markright-cli"
+description = "Formats and lints the Markdown of a repository"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["markdown", "linter", "formatter", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "markright"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+ctrlc.workspace = true
+markright = { workspace = true, features = ["disk", "parallel"] }
+
+[dev-dependencies]
+serde_json.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

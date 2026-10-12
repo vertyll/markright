@@ -16,7 +16,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub use error::ConfigError;
-pub use exclusions::{ExclusionKey, ExclusionRule, FormatterExclusions, LinterExclusions, Matched, Section, Watched};
+#[cfg(test)]
+use exclusions::Section;
+pub(crate) use exclusions::{ExclusionKey, Matched};
+pub use exclusions::{ExclusionRule, FormatterExclusions, LinterExclusions};
 pub use output::{Destination, Format, Formats, Output, ReportFormat};
 pub use pattern::Pattern;
 pub use read::Syntax;

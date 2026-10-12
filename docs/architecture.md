@@ -32,12 +32,12 @@ flowchart LR
 
 ## Crates
 
-| Crate                   | Role                                                                                       |
-|-------------------------|--------------------------------------------------------------------------------------------|
-| `crates/markright`      | the library: parsing, the formatters and linters, the configuration, a run, the reports    |
-| `crates/markright-cli`  | the `markright` command: its subcommands and options, Ctrl+C, the exit codes               |
-| `crates/markright-wasm` | one document checked in memory, compiled to WebAssembly for the playground                 |
-| `xtask`                 | the project's own tasks: the tables of Rules and Configuration, and the documentation site |
+| Crate                   | Role                                                                                                     |
+|-------------------------|----------------------------------------------------------------------------------------------------------|
+| `crates/markright`      | the library: parsing, the formatters and linters, the configuration, a run, the reports                  |
+| `crates/markright-cli`  | the `markright` command: its subcommands and options, Ctrl+C, the exit codes                             |
+| `crates/markright-wasm` | one document checked in memory, compiled to WebAssembly for the playground                               |
+| `xtask`                 | the project's own tasks: the tables of Rules and Configuration, and the JSON schema of the configuration |
 
 The library has two features, both on by default. `disk` checks a repository on disk: it lists the documents through
 Git and writes what `fmt` changes. `parallel` spreads the documents over the cores. The playground turns both off:
@@ -75,9 +75,18 @@ flowchart TD
     linters --> issue
     config --> formatters
     config --> linters
+    config --> markdown
     output --> config
     output --> issue
 ```
+
+## What the library exposes
+
+The library shows the commands, the playground and the project's tasks only what they use: the configuration and
+its types, a run and its report, the reports' formats, the parsed `Document`, and the registries, whose entries tell
+what each rule is through `about()`. How a rule runs stays inside: the traits of the linters, the repository and the
+context they see, the files a run reads, and the findings a rule gives back before the runner names it. A formatter
+is the one rule that can be run from outside, since formatting a document needs nothing but the document.
 
 ## One core, two front ends
 
@@ -141,8 +150,7 @@ it is now.
 
 ### Linters
 
-A linter implements one of two traits, and `linters::ALL` holds it as the matching variant of `Linter`, so each linter
-is exactly one kind:
+A linter implements one of two traits, and `linters::ALL` holds it as a `Linter`, which knows which of the two it is:
 
 - a `DocumentLinter` runs once per document;
 - a `RepositoryLinter` runs once over every document, for rules about the whole set, such as `index`.

@@ -21,7 +21,7 @@ pub struct About {
 }
 
 /// A linter that looks at one document at a time.
-pub trait DocumentLinter: Sync {
+pub(crate) trait DocumentLinter: Sync {
 	/// What the linter is called and what it enforces.
 	fn about(&self) -> About;
 
@@ -34,7 +34,7 @@ pub trait DocumentLinter: Sync {
 }
 
 /// A linter that looks at the whole repository once, after every document is parsed.
-pub trait RepositoryLinter: Sync {
+pub(crate) trait RepositoryLinter: Sync {
 	/// What the linter is called and what it enforces.
 	fn about(&self) -> About;
 
@@ -42,9 +42,13 @@ pub trait RepositoryLinter: Sync {
 	fn check(&self, context: &Context<'_>) -> Vec<Finding>;
 }
 
-/// A linter of the registry: of one document at a time, or of the whole repository.
+/// A linter of the registry. What it says about itself is open to anyone; running it is the runner's work.
 #[derive(Clone, Copy)]
-pub enum Linter {
+pub struct Linter(pub(crate) Kind);
+
+/// The kind of a linter: of one document at a time, or of the whole repository.
+#[derive(Clone, Copy)]
+pub(crate) enum Kind {
 	/// Runs once per document.
 	Document(&'static dyn DocumentLinter),
 	/// Runs once for the whole repository.
@@ -52,12 +56,20 @@ pub enum Linter {
 }
 
 impl Linter {
+	pub(super) const fn document(linter: &'static dyn DocumentLinter) -> Self {
+		Self(Kind::Document(linter))
+	}
+
+	pub(super) const fn repository(linter: &'static dyn RepositoryLinter) -> Self {
+		Self(Kind::Repository(linter))
+	}
+
 	/// What the linter is called and what it enforces.
 	#[must_use]
 	pub fn about(self) -> About {
-		match self {
-			Self::Document(linter) => linter.about(),
-			Self::Repository(linter) => linter.about(),
+		match self.0 {
+			Kind::Document(linter) => linter.about(),
+			Kind::Repository(linter) => linter.about(),
 		}
 	}
 }

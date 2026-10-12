@@ -36,7 +36,7 @@ const EXCLUDED_DIRS: &[&str] = &[
 /// # Errors
 ///
 /// Returns [`Error::Stopped`] when stopped, or why the directory could not be walked.
-pub fn markdown(root: &Path, stop: &AtomicBool) -> Result<Vec<String>, Error> {
+pub(crate) fn markdown(root: &Path, stop: &AtomicBool) -> Result<Vec<String>, Error> {
 	let stopped = || stop.load(Ordering::Relaxed);
 	if stopped() {
 		return Err(Error::Stopped);

@@ -36,7 +36,7 @@ incomplete exclusion rule stops any command with exit code `2`, and the message 
 TOML, the header of the table the problem is in:
 
 ```text
-markright: .markright.yaml: line 5: linters.settings.line-length: unknown field `width`, expected `max`
+markright: .markright.yaml: line 5: unknown field `width`, expected one of max
 ```
 
 Every key:

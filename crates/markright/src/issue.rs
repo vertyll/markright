@@ -4,19 +4,19 @@ use std::fmt;
 
 /// What a rule found at one line of a document. The runner turns it into an [`Issue`] that names the rule.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Finding {
+pub(crate) struct Finding {
 	/// The document, relative to the repository root, with forward slashes.
-	pub path: String,
+	pub(crate) path: String,
 	/// The 1-based line.
-	pub line: usize,
+	pub(crate) line: usize,
 	/// What is wrong.
-	pub message: String,
+	pub(crate) message: String,
 }
 
 impl Finding {
 	/// A finding at `line` of the document at `path`.
 	#[must_use]
-	pub fn new(path: impl Into<String>, line: usize, message: impl Into<String>) -> Self {
+	pub(crate) fn new(path: impl Into<String>, line: usize, message: impl Into<String>) -> Self {
 		Self {
 			path: path.into(),
 			line,
@@ -26,7 +26,7 @@ impl Finding {
 
 	/// The issue this finding is, found by the formatter or linter called `source`.
 	#[must_use]
-	pub fn found_by(self, source: &'static str) -> Issue {
+	pub(crate) fn found_by(self, source: &'static str) -> Issue {
 		Issue {
 			path: self.path,
 			line: self.line,

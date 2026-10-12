@@ -2,10 +2,10 @@
 
 pub mod config;
 #[cfg(feature = "disk")]
-pub mod discover;
+mod discover;
 mod error;
 pub mod formatters;
-pub mod fs;
+mod fs;
 pub mod issue;
 pub mod linters;
 pub mod markdown;

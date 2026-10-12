@@ -11,11 +11,11 @@ mod tables;
 mod walker;
 
 pub use document::{Bullet, Definition, Document, Fence, Heading, Line, Link, LinkKind, Marker, Reference, Table};
-pub use tables::{is_table_row, table_cells};
+pub(crate) use tables::{is_table_row, table_cells};
 
 /// Whether a link target leaves the repository: a URL with a scheme, or a mail address.
 #[must_use]
-pub fn is_external(target: &str) -> bool {
+pub(crate) fn is_external(target: &str) -> bool {
 	target.contains("://") || target.starts_with("mailto:")
 }
 

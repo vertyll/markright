@@ -11,21 +11,21 @@ use crate::markdown::Document;
 
 /// What a linter gets besides the document: the repository, the settings of the linters and the linter path
 /// exclusions.
-pub struct Context<'a> {
+pub(crate) struct Context<'a> {
 	/// The repository being linted.
-	pub repo: &'a Repo<'a>,
+	pub(crate) repo: &'a Repo<'a>,
 	/// The settings of the linters, of which the linter reads its own.
-	pub settings: &'a Settings,
+	pub(crate) settings: &'a Settings,
 	/// Whether the linter exclusions cover the document at a path.
-	pub excluded: &'a (dyn Fn(&str) -> bool + Sync),
+	pub(crate) excluded: &'a (dyn Fn(&str) -> bool + Sync),
 }
 
 /// The repository being linted: its files, which links may point at, and every document, parsed after formatting.
 /// Linters may use it from many threads at once.
-pub struct Repo<'a> {
+pub(crate) struct Repo<'a> {
 	files: &'a dyn Files,
 	/// Every document, by path.
-	pub docs: BTreeMap<String, Document>,
+	pub(crate) docs: BTreeMap<String, Document>,
 	/// Every directory that holds a document, the root included.
 	dirs: OnceLock<HashSet<String>>,
 	/// Whether each path looked up on the files exists.
@@ -35,7 +35,7 @@ pub struct Repo<'a> {
 impl<'a> Repo<'a> {
 	/// A repository of `files` whose documents are `docs`.
 	#[must_use]
-	pub fn new(files: &'a dyn Files, docs: BTreeMap<String, Document>) -> Self {
+	pub(crate) fn new(files: &'a dyn Files, docs: BTreeMap<String, Document>) -> Self {
 		Self {
 			files,
 			docs,
@@ -51,7 +51,7 @@ impl<'a> Repo<'a> {
 	/// # Errors
 	///
 	/// Returns why the files could not say.
-	pub fn exists(&self, path: &str) -> io::Result<bool> {
+	pub(crate) fn exists(&self, path: &str) -> io::Result<bool> {
 		if self.docs.contains_key(path) || self.dirs.get_or_init(|| self.index_dirs()).contains(path) {
 			return Ok(true);
 		}

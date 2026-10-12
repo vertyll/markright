@@ -9,7 +9,7 @@ use crate::config::{Config, ExclusionKey, Matched};
 use crate::formatters;
 use crate::fs::Files;
 use crate::issue::{Finding, Issue};
-use crate::linters::{self, Context, Linter, Repo};
+use crate::linters::{self, Context, Kind, Linter, Repo};
 use crate::markdown::Document;
 
 /// Formats the documents at `paths` in `files` and, in [`Mode::Lint`], lints the result. It reads `files` and never
@@ -207,7 +207,7 @@ impl Pass<'_> {
 					self.add(name, result?);
 				}
 			}
-			if let Linter::Repository(linter) = linter {
+			if let Kind::Repository(linter) = linter.0 {
 				self.add(name, linter.check(&context));
 			}
 		}
@@ -235,9 +235,9 @@ fn lint_document(enabled: &[Linter], context: &Context<'_>, path: &str) -> Vec<R
 	let doc = &context.repo.docs[path];
 	let mut found = Vec::with_capacity(enabled.len());
 	for linter in enabled {
-		let result = match linter {
-			Linter::Document(linter) => linter.check(context, path, doc),
-			Linter::Repository(_) => Ok(Vec::new()),
+		let result = match linter.0 {
+			Kind::Document(linter) => linter.check(context, path, doc),
+			Kind::Repository(_) => Ok(Vec::new()),
 		};
 		let failed = result.is_err();
 		found.push(result);

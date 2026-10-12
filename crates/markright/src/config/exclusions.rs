@@ -61,7 +61,7 @@ pub struct FormatterExclusions {
 
 /// A section of the file that has exclusions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum Section {
+pub(crate) enum Section {
 	/// `formatters`
 	Formatters,
 	/// `linters`
@@ -79,7 +79,7 @@ impl fmt::Display for Section {
 
 /// One exclusion of the file, as its key there names it, such as `linters.exclusions.paths[0]`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum ExclusionKey {
+pub(crate) enum ExclusionKey {
 	/// `<section>.exclusions.paths[index]`
 	Path {
 		/// The section.
@@ -111,20 +111,20 @@ impl fmt::Display for ExclusionKey {
 /// What the exclusions make of a document or an issue: whether they exclude it, and which of them matched it, which
 /// warn-unused counts as used.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Matched {
+pub(crate) struct Matched {
 	/// Whether the document or the issue is excluded.
-	pub excluded: bool,
+	pub(crate) excluded: bool,
 	/// The exclusions that matched it.
-	pub by: Vec<ExclusionKey>,
+	pub(crate) by: Vec<ExclusionKey>,
 }
 
 /// An exclusion of a section that asks for warn-unused, and the warning printed when it matched nothing in a run.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Watched {
+pub(crate) struct Watched {
 	/// The exclusion.
-	pub key: ExclusionKey,
+	pub(crate) key: ExclusionKey,
 	/// What to print when it matched nothing.
-	pub warning: String,
+	pub(crate) warning: String,
 }
 
 /// The path patterns of a section: those that exclude a document, and those that keep only the documents they
@@ -241,19 +241,19 @@ impl ExclusionRule {
 impl Config {
 	/// Whether the formatters leave the document at `path` alone, and the exclusions that matched it.
 	#[must_use]
-	pub fn formatter_excluded(&self, path: &str) -> Matched {
+	pub(crate) fn formatter_excluded(&self, path: &str) -> Matched {
 		self.formatters.exclusions.paths().exclude(path)
 	}
 
 	/// Whether the linter exclusion paths cover the document at `path`, and the exclusions that matched it.
 	#[must_use]
-	pub fn linter_path_excluded(&self, path: &str) -> Matched {
+	pub(crate) fn linter_path_excluded(&self, path: &str) -> Matched {
 		self.linters.exclusions.paths().exclude(path)
 	}
 
 	/// Whether an issue `linter` found at `path`, with `message`, is dropped, and the exclusions that matched it.
 	#[must_use]
-	pub fn linter_excluded(&self, path: &str, linter: &str, message: &str) -> Matched {
+	pub(crate) fn linter_excluded(&self, path: &str, linter: &str, message: &str) -> Matched {
 		let mut matched = self.linter_path_excluded(path);
 		let rules = &self.linters.exclusions.rules;
 		if let Some(i) = rules.iter().position(|rule| rule.matches(path, linter, message)) {
@@ -265,7 +265,7 @@ impl Config {
 
 	/// The exclusions of the sections that ask for warn-unused, in the order the file declares them.
 	#[must_use]
-	pub fn watched(&self) -> Vec<Watched> {
+	pub(crate) fn watched(&self) -> Vec<Watched> {
 		let mut out = Vec::new();
 		let formatters = &self.formatters.exclusions;
 		if formatters.warn_unused {

@@ -21,8 +21,9 @@ mod readme_links;
 mod table_columns;
 mod unused_definitions;
 
-pub use repo::{Context, Repo};
-pub use rule::{About, DocumentLinter, Example, Linter, RepositoryLinter};
+pub(crate) use repo::{Context, Repo};
+pub use rule::{About, Example, Linter};
+pub(crate) use rule::{DocumentLinter, Kind, RepositoryLinter};
 pub use settings::Settings;
 
 use targets::{escapes, targets};
@@ -35,19 +36,19 @@ const EXAMPLE_GUIDE: (&str, &str) = ("docs/guide.md", "# Guide\n\n## Install\n")
 
 /// Every linter, in the order they run.
 pub static ALL: &[Linter] = &[
-	Linter::Document(&links::Links),
-	Linter::Document(&anchors::Anchors),
-	Linter::Document(&unused_definitions::UnusedDefinitions),
-	Linter::Document(&alerts::Alerts),
-	Linter::Document(&blockquotes::Blockquotes),
-	Linter::Document(&fences::Fences),
-	Linter::Document(&fence_language::FenceLanguage),
-	Linter::Document(&heading_increment::HeadingIncrement),
-	Linter::Document(&image_alt::ImageAlt),
-	Linter::Document(&table_columns::TableColumns),
-	Linter::Document(&line_length::LineLength),
-	Linter::Repository(&index::Index),
-	Linter::Repository(&readme_links::ReadmeLinks),
+	Linter::document(&links::Links),
+	Linter::document(&anchors::Anchors),
+	Linter::document(&unused_definitions::UnusedDefinitions),
+	Linter::document(&alerts::Alerts),
+	Linter::document(&blockquotes::Blockquotes),
+	Linter::document(&fences::Fences),
+	Linter::document(&fence_language::FenceLanguage),
+	Linter::document(&heading_increment::HeadingIncrement),
+	Linter::document(&image_alt::ImageAlt),
+	Linter::document(&table_columns::TableColumns),
+	Linter::document(&line_length::LineLength),
+	Linter::repository(&index::Index),
+	Linter::repository(&readme_links::ReadmeLinks),
 ];
 
 /// The name of every linter, in the order they run.

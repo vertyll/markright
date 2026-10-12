@@ -6,12 +6,12 @@ use std::path::Path;
 
 /// Whether the file at `path` is a Markdown document: whether its name ends in `.md`.
 #[must_use]
-pub fn is_markdown(path: &str) -> bool {
+pub(crate) fn is_markdown(path: &str) -> bool {
 	Path::new(path).extension().is_some_and(|extension| extension == "md")
 }
 
 /// Read access to the files of a repository, by slash-separated path relative to its root.
-pub trait Files: Sync {
+pub(crate) trait Files: Sync {
 	/// The content of the file at `path`.
 	///
 	/// # Errors

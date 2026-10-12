@@ -50,8 +50,7 @@ markright: 4 issue(s)
 ```
 
 Every issue names the rule that found it. A repository chooses its formatters and linters, their settings and the
-paths each one skips in `.markright.yaml`, or `.markright.toml` for those who prefer TOML, which can be as small as
-this:
+paths each one skips in a configuration file at its root, which can be as small as this, in YAML as `.markright.yaml`:
 
 ```yaml
 version: "1"
@@ -62,6 +61,20 @@ linters:
 formatters:
   default: all
 ```
+
+or in TOML as `.markright.toml`:
+
+```toml
+version = "1"
+
+[linters]
+default = "all"
+
+[formatters]
+default = "all"
+```
+
+The two say the same; a repository keeps one of them.
 
 The rest is in [Configuration](docs/configuration.md), and every formatter and linter in [Rules](docs/rules.md).
 

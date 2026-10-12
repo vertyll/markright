@@ -5,8 +5,8 @@ use std::sync::Mutex;
 
 use super::settings::{Index, LineLength};
 use super::{
-	ALL, Context, Linter, Repo, Settings, alerts, anchors, blockquotes, fence_language, fences, heading_increment,
-	image_alt, index, line_length, links, readme_links, table_columns, unused_definitions,
+	ALL, Context, Kind, Linter, Repo, Settings, alerts, anchors, blockquotes, fence_language, fences,
+	heading_increment, image_alt, index, line_length, links, readme_links, table_columns, unused_definitions,
 };
 use crate::fs::{Files, is_markdown};
 use crate::markdown::Document;
@@ -40,9 +40,9 @@ fn found_excluding(
 		settings,
 		excluded,
 	};
-	let findings = match linter {
-		Linter::Document(linter) => linter.check(&context, path, &repo.docs[path]).expect("the linter runs"),
-		Linter::Repository(linter) => linter.check(&context),
+	let findings = match linter.0 {
+		Kind::Document(linter) => linter.check(&context, path, &repo.docs[path]).expect("the linter runs"),
+		Kind::Repository(linter) => linter.check(&context),
 	};
 	let mut found: Vec<String> = findings
 		.iter()
@@ -86,7 +86,7 @@ fn broken_links() {
 		("docs/a.md", "# A\n"),
 	]);
 	assert_eq!(
-		found(Linter::Document(&links::Links), &repo(&f), "README.md"),
+		found(Linter::document(&links::Links), &repo(&f), "README.md"),
 		[
 			"README.md:3: broken link: logo.png#x",
 			"README.md:3: broken link: missing.md",
@@ -108,7 +108,7 @@ fn broken_anchors() {
 		("img.png", ""),
 	]);
 	let repo = repo(&f);
-	let anchors = Linter::Document(&anchors::Anchors);
+	let anchors = Linter::document(&anchors::Anchors);
 	assert_eq!(
 		found(anchors, &repo, "README.md"),
 		[
@@ -126,7 +126,7 @@ fn alerts() {
 		"> [!NOTE]\n>\n> fine\n\n> [!INFO]\n>\n> x\n\n> [!TIP]\n> no gap\n\n```\n> [!BAD]\n```",
 	)]);
 	assert_eq!(
-		found(Linter::Document(&alerts::Alerts), &repo(&f), "a.md"),
+		found(Linter::document(&alerts::Alerts), &repo(&f), "a.md"),
 		[
 			"a.md:5: unknown alert type [!INFO] (allowed: NOTE, TIP, IMPORTANT, WARNING, CAUTION)",
 			"a.md:9: alert tag must be followed by an empty > line",
@@ -137,7 +137,7 @@ fn alerts() {
 #[test]
 fn blockquotes() {
 	let f = files(&[("a.md", "> one\n> two\n\n> three\nlazy\n")]);
-	let found = found(Linter::Document(&blockquotes::Blockquotes), &repo(&f), "a.md");
+	let found = found(Linter::document(&blockquotes::Blockquotes), &repo(&f), "a.md");
 	assert_eq!(found, ["a.md:5: blockquote continues on a line without >"]);
 }
 
@@ -145,7 +145,7 @@ fn blockquotes() {
 fn fences() {
 	let f = files(&[("a.md", "x\n```go\ncode"), ("b.md", "```\ncode\n```")]);
 	let repo = repo(&f);
-	let fences = Linter::Document(&fences::Fences);
+	let fences = Linter::document(&fences::Fences);
 	assert_eq!(found(fences, &repo, "a.md"), ["a.md:2: code block is never closed"]);
 	assert_eq!(found(fences, &repo, "b.md"), [] as [&str; 0]);
 }
@@ -166,7 +166,7 @@ fn line_length() {
 	.join("\n");
 	let f = files(&[("a.md", &content)]);
 	let repo = repo(&f);
-	let line_length = Linter::Document(&line_length::LineLength);
+	let line_length = Linter::document(&line_length::LineLength);
 	assert_eq!(
 		found(line_length, &repo, "a.md"),
 		["a.md:1: line is 150 characters, limit 120"]
@@ -190,7 +190,7 @@ fn index() {
 		("other/IDX.md", "x"),
 	]);
 	let repo = repo(&f);
-	let index = Linter::Repository(&index::Index);
+	let index = Linter::repository(&index::Index);
 	assert_eq!(
 		found(index, &repo, ""),
 		[
@@ -216,7 +216,7 @@ fn readme_links() {
 		("CONTENTS.md", "x"),
 		("GLOSSARY.md", "x"),
 	]);
-	let found = found(Linter::Repository(&readme_links::ReadmeLinks), &repo(&f), "");
+	let found = found(Linter::repository(&readme_links::ReadmeLinks), &repo(&f), "");
 	assert_eq!(found, ["README.md:1: does not link GLOSSARY.md"]);
 }
 
@@ -232,14 +232,14 @@ fn reference_links() {
 	]);
 	let repo = repo(&f);
 	assert_eq!(
-		found(Linter::Document(&links::Links), &repo, "README.md"),
+		found(Linter::document(&links::Links), &repo, "README.md"),
 		[
 			"README.md:3: undefined reference: [missing]",
 			"README.md:7: broken link: nowhere.md"
 		]
 	);
 	assert_eq!(
-		found(Linter::Document(&anchors::Anchors), &repo, "README.md"),
+		found(Linter::document(&anchors::Anchors), &repo, "README.md"),
 		["README.md:6: broken anchor: docs/guide.md#nope"]
 	);
 }
@@ -253,7 +253,7 @@ fn anchors_of_setext_headings_and_html_ids() {
 		),
 		("docs/a.md", "Setext title\n------------\n\n<a id=\"custom\"></a>\n"),
 	]);
-	let found = found(Linter::Document(&anchors::Anchors), &repo(&f), "README.md");
+	let found = found(Linter::document(&anchors::Anchors), &repo(&f), "README.md");
 	assert_eq!(found, ["README.md:1: broken anchor: docs/a.md#gone"]);
 }
 
@@ -271,11 +271,11 @@ fn link_forms() {
 	]);
 	let repo = repo(&f);
 	assert_eq!(
-		found(Linter::Document(&links::Links), &repo, "README.md"),
+		found(Linter::document(&links::Links), &repo, "README.md"),
 		["README.md:6: broken link: docs/none.md"]
 	);
 	assert_eq!(
-		found(Linter::Document(&anchors::Anchors), &repo, "README.md"),
+		found(Linter::document(&anchors::Anchors), &repo, "README.md"),
 		[] as [&str; 0]
 	);
 }
@@ -287,13 +287,13 @@ fn index_sees_split_links() {
 		("README.md", "x"),
 		("docs/b c.md", "x"),
 	]);
-	assert_eq!(found(Linter::Repository(&index::Index), &repo(&f), ""), [] as [&str; 0]);
+	assert_eq!(found(Linter::repository(&index::Index), &repo(&f), ""), [] as [&str; 0]);
 }
 
 #[test]
 fn fence_language() {
 	let f = files(&[("a.md", "```go\nx\n```\n\n```\ny\n```\n\n~~~ text\nz\n~~~\n")]);
-	let found = found(Linter::Document(&fence_language::FenceLanguage), &repo(&f), "a.md");
+	let found = found(Linter::document(&fence_language::FenceLanguage), &repo(&f), "a.md");
 	assert_eq!(found, ["a.md:5: code block without a language"]);
 }
 
@@ -301,7 +301,7 @@ fn fence_language() {
 fn heading_increment() {
 	let f = files(&[("a.md", "# A\n\n## B\n\n#### D\n\n## E\n\nSetext\n------\n\n### F\n")]);
 	let found = found(
-		Linter::Document(&heading_increment::HeadingIncrement),
+		Linter::document(&heading_increment::HeadingIncrement),
 		&repo(&f),
 		"a.md",
 	);
@@ -312,7 +312,7 @@ fn heading_increment() {
 fn image_alt() {
 	let f = files(&[("a.md", "![logo](a.png) ![](b.png) [![](badge.svg)](https://x.y)\n")]);
 	assert_eq!(
-		found(Linter::Document(&image_alt::ImageAlt), &repo(&f), "a.md"),
+		found(Linter::document(&image_alt::ImageAlt), &repo(&f), "a.md"),
 		[
 			"a.md:1: image without alternative text: b.png",
 			"a.md:1: image without alternative text: badge.svg"
@@ -330,7 +330,7 @@ fn empty_links() {
 		("a.png", ""),
 	]);
 	assert_eq!(
-		found(Linter::Document(&links::Links), &repo(&f), "README.md"),
+		found(Linter::document(&links::Links), &repo(&f), "README.md"),
 		[
 			"README.md:1: link without a target: [no target]()",
 			"README.md:1: link without text: [](README.md)"
@@ -341,7 +341,7 @@ fn empty_links() {
 #[test]
 fn table_columns() {
 	let f = files(&[("a.md", "| a | b |\n|---|---|\n| 1 | 2 |\n| 1 | 2 | 3 |\n| 1 |\n")]);
-	let found = found(Linter::Document(&table_columns::TableColumns), &repo(&f), "a.md");
+	let found = found(Linter::document(&table_columns::TableColumns), &repo(&f), "a.md");
 	assert_eq!(
 		found,
 		["a.md:4: row has 3 cells, the header 2; the extra cells are not shown"]
@@ -356,7 +356,7 @@ fn unused_definitions() {
 		 [full]: a.md\n[collapsed]: b.md\n[shortcut]: c.md\n[pic]: d.png\n[unused]: e.md\n",
 	)]);
 	let found = found(
-		Linter::Document(&unused_definitions::UnusedDefinitions),
+		Linter::document(&unused_definitions::UnusedDefinitions),
 		&repo(&f),
 		"a.md",
 	);

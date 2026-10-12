@@ -12,7 +12,8 @@ bash scripts/check.sh
 2. `cargo clippy`, with every pedantic lint, on the workspace, on the library without its features, and on the
    playground compiled to WebAssembly when that target is installed;
 3. the tests of every crate, the schema, the examples and the tables of the documentation included;
-4. `markright run` on this repository's own documents.
+4. `cargo doc`, which fails on a broken link or tag in the API documentation;
+5. `markright run` on this repository's own documents.
 
 The lints are set once, in `[workspace.lints]` of `Cargo.toml`, and every crate takes them; a warning fails the
 checks. CI runs the same script on every push and pull request to `main`, and on every tag, with the WebAssembly

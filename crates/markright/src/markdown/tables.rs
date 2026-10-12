@@ -3,13 +3,13 @@
 /// Whether `line` starts with `|`, as a table row written with a leading pipe does. Which lines form a table is for
 /// the parser to say: GFM also takes rows without one.
 #[must_use]
-pub fn is_table_row(line: &str) -> bool {
+pub(crate) fn is_table_row(line: &str) -> bool {
 	line.trim().starts_with('|')
 }
 
 /// Splits a table row into its cells, trimmed, keeping pipes inside inline code and escaped pipes in their cell.
 #[must_use]
-pub fn table_cells(line: &str) -> Vec<String> {
+pub(crate) fn table_cells(line: &str) -> Vec<String> {
 	let trimmed = line.trim();
 	let body = trimmed.strip_prefix('|').unwrap_or(trimmed);
 	let body = match body.strip_suffix('|') {

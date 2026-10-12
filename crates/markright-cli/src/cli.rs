@@ -42,7 +42,7 @@ pub(crate) struct Target {
 	/// The root of the repository
 	#[arg(default_value = ".")]
 	pub(crate) root: PathBuf,
-	/// The configuration file, YAML or TOML by its extension [default: <ROOT>/.markright.yaml or .markright.toml]
+	/// The configuration file, YAML or TOML by its extension [default: .markright.yaml or .markright.toml in ROOT]
 	#[arg(short, long, value_name = "FILE")]
 	config: Option<PathBuf>,
 }

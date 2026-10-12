@@ -49,8 +49,14 @@ docs/guide.md:9: code block without a language (fence-language)
 markright: 4 issue(s)
 ```
 
-Every issue names the rule that found it. A repository chooses its formatters and linters, their settings and the
-paths each one skips in a configuration file at its root, which can be as small as this, in YAML as `.markright.yaml`:
+Every issue names the rule that found it.
+
+## Configuration
+
+A repository chooses its formatters and linters, their settings and the paths each one skips in one file at its
+root, written in YAML or in TOML. The smallest one turns everything on.
+
+### YAML: `.markright.yaml`
 
 ```yaml
 version: "1"
@@ -62,7 +68,7 @@ formatters:
   default: all
 ```
 
-or in TOML as `.markright.toml`:
+### TOML: `.markright.toml`
 
 ```toml
 version = "1"
@@ -74,9 +80,8 @@ default = "all"
 default = "all"
 ```
 
-The two say the same; a repository keeps one of them.
-
-The rest is in [Configuration](docs/configuration.md), and every formatter and linter in [Rules](docs/rules.md).
+The two say the same; a repository keeps one of them. The rest is in [Configuration](docs/configuration.md), and
+every formatter and linter in [Rules](docs/rules.md).
 
 ## Documentation
 

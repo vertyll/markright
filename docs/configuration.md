@@ -4,7 +4,13 @@
 TOML, whichever the repository prefers; a root that holds both is an error. `--config` names another file, read as
 TOML when its name ends in `.toml` and as YAML otherwise. Every repository that uses the tool keeps one, even when it
 sets nothing beyond the defaults, so what runs is visible where the documents are and a change of defaults in a new
-version shows up as a decision in the file. The smallest one:
+version shows up as a decision in the file.
+
+## The smallest file
+
+It turns every formatter and linter on.
+
+### YAML: `.markright.yaml`
 
 ```yaml
 version: "1"
@@ -16,7 +22,7 @@ formatters:
   default: all
 ```
 
-or, in TOML:
+### TOML: `.markright.toml`
 
 ```toml
 version = "1"
@@ -28,12 +34,14 @@ default = "all"
 default = "all"
 ```
 
-Both say the same: every key below has the same name and meaning in either language, and this guide shows YAML. A
-file must declare `version: "1"`; any key it sets replaces only that value, and a list replaces the whole default
+Both say the same: every key below has the same name and meaning in either language, and this guide shows YAML.
+
+## Rules of the file
+
+A file must declare `version: "1"`; any key it sets replaces only that value, and a list replaces the whole default
 list. Without the file every formatter and linter runs with the settings below. `markright config verify` checks a file
 without running anything; an unknown key, name or regular expression, a name both enabled and disabled, or an
-incomplete exclusion rule stops any command with exit code `2`, and the message names the line of the file, or, in
-TOML, the header of the table the problem is in:
+incomplete exclusion rule stops any command with exit code `2`, and the message names the line of the file:
 
 ```text
 markright: .markright.yaml: line 5: unknown field `width`, expected one of max

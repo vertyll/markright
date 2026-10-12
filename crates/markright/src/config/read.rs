@@ -52,8 +52,7 @@ fn yaml_error(file: &str, e: &serde_saphyr::Error) -> ConfigError {
 	}
 }
 
-/// The error of the TOML parser as one line: the line its span starts on, which for a problem inside a table is the
-/// table's header, and what is wrong.
+/// The error of the TOML parser as one line: the line its span starts on, and what is wrong.
 fn toml_error(file: &str, text: &str, e: &toml::de::Error) -> ConfigError {
 	let line = e
 		.span()

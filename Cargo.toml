@@ -40,8 +40,8 @@ unreachable_pub = "warn"
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
-# Every document linter has the signature Check::Document takes, which lets the links linter fail on a disk error.
-unnecessary_wraps = "allow"
+# Modules follow the style of The Rust Book: `foo.rs` next to the directory `foo/`, never `foo/mod.rs`.
+mod_module_files = "warn"
 
 [profile.release]
 lto = true

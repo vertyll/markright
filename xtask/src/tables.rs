@@ -60,13 +60,7 @@ fn settings(root: &Path) -> io::Result<Vec<Vec<String>>> {
 		let name = node["$ref"].as_str().and_then(|r| r.strip_prefix("#/$defs/"));
 		name.map_or_else(|| node.clone(), |name| schema["$defs"][name].clone())
 	};
-	let sections = [
-		(
-			"formatters",
-			formatters::ALL.iter().map(|f| f.about().name).collect::<Vec<_>>(),
-		),
-		("linters", linters::ALL.iter().map(|l| l.about().name).collect()),
-	];
+	let sections = [("formatters", formatters::names()), ("linters", linters::names())];
 	let mut rows = Vec::new();
 	for (section, names) in sections {
 		let rules = resolve(&resolve(&schema["properties"][section])["properties"]["settings"]);

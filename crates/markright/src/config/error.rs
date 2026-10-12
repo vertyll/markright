@@ -9,10 +9,10 @@ use super::{TOML_FILE, YAML_FILE};
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
 	/// The file could not be read.
-	#[error("reading {path}: {source}")]
+	#[error("reading {}: {source}", path.display())]
 	Read {
 		/// The file.
-		path: String,
+		path: PathBuf,
 		/// Why.
 		source: io::Error,
 	},

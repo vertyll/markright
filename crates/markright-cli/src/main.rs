@@ -1,78 +1,21 @@
 //! The markright command: `markright run` reports, `markright fmt` rewrites.
 
+mod cli;
+
 use std::ffi::OsString;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::ExitCode;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use clap::Parser;
 use clap::error::ErrorKind;
-use clap::{Args, Parser, Subcommand};
-use markright::config::{self, Config, ConfigError};
+use markright::config::{self, Config};
 use markright::output::{self, Rule, Streams};
 use markright::runner::{Mode, Runner};
 use markright::{formatters, linters, markdown};
 
-/// Formats and lints the Markdown of a repository.
-#[derive(Debug, Parser)]
-#[command(name = "markright", version, arg_required_else_help = true)]
-struct Cli {
-	#[command(subcommand)]
-	command: Command,
-}
-
-#[derive(Debug, Subcommand)]
-enum Command {
-	/// Report formatting and lint issues; exit 1 when there are any
-	Run(Target),
-	/// Apply the formatters in place
-	Fmt(Target),
-	/// List the linters and whether the configuration enables them
-	Linters(Target),
-	/// List the formatters and whether the configuration enables them
-	Formatters(Target),
-	/// Work with the configuration file
-	#[command(subcommand, arg_required_else_help = true)]
-	Config(ConfigCommand),
-	/// Print the version of markright
-	Version,
-}
-
-#[derive(Debug, Subcommand)]
-enum ConfigCommand {
-	/// Check the configuration file and exit
-	Verify(Target),
-}
-
-/// The repository a command works on, and its configuration.
-#[derive(Debug, Args)]
-struct Target {
-	/// The root of the repository
-	#[arg(default_value = ".")]
-	root: PathBuf,
-	/// The configuration file, YAML or TOML by its extension [default: <ROOT>/.markright.yaml or .markright.toml]
-	#[arg(short, long, value_name = "FILE")]
-	config: Option<PathBuf>,
-}
-
-impl Target {
-	/// The configuration the command runs with, and the file it was read from, if any: the one `--config` names, or
-	/// the one the root holds, or the defaults.
-	fn configuration(&self) -> Result<Found, ConfigError> {
-		let path = match &self.config {
-			Some(path) => Some(path.clone()),
-			None => Config::locate(&self.root)?,
-		};
-		let config = path.as_deref().map_or_else(|| Ok(Config::default()), Config::load)?;
-		Ok(Found { config, path })
-	}
-}
-
-/// The configuration a command runs with, and the file it was read from, if any.
-struct Found {
-	config: Config,
-	path: Option<PathBuf>,
-}
+use crate::cli::{Cli, Command, ConfigCommand, Found};
 
 /// How the command ends.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

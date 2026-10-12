@@ -1,15 +1,18 @@
 //! The registry of formatters: rules that rewrite the prose lines of a document.
 
+// What the formatters share.
+mod fix;
+mod rule;
+pub mod settings;
+mod width;
+
+// The formatters, one per file.
 mod arrows;
 mod blank_lines;
 mod final_newline;
-mod fix;
 mod list_marker;
-mod rule;
-pub mod settings;
 mod tables;
 mod trailing_whitespace;
-mod width;
 
 pub use fix::Fix;
 pub use rule::{About, Formatter};
@@ -26,6 +29,12 @@ pub static ALL: &[&dyn Formatter] = &[
 	&blank_lines::BlankLines,
 	&final_newline::FinalNewline,
 ];
+
+/// The name of every formatter, in the order they run.
+#[must_use]
+pub fn names() -> Vec<&'static str> {
+	ALL.iter().map(|f| f.about().name).collect()
+}
 
 /// The formatter called `name`.
 #[must_use]

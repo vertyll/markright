@@ -53,8 +53,7 @@ fn unescape(s: &str) -> String {
 
 /// The directory of a slash-separated path, `.` for one at the root.
 pub(super) fn parent(path: &str) -> &str {
-	path.rsplit_once('/')
-		.map_or(".", |(dir, _)| if dir.is_empty() { "/" } else { dir })
+	path.rsplit_once('/').map_or(".", |(dir, _)| dir)
 }
 
 /// Joins `relative` to `dir` and resolves its `.` and `..` elements; a path that climbs above the root keeps its

@@ -4,6 +4,7 @@
 mod error;
 mod exclusions;
 mod output;
+mod pattern;
 mod read;
 mod schema;
 
@@ -15,10 +16,9 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub use error::ConfigError;
-pub use exclusions::{
-	ExclusionKey, ExclusionRule, FormatterExclusions, LinterExclusions, Matched, Pattern, Section, Watched,
-};
+pub use exclusions::{ExclusionKey, ExclusionRule, FormatterExclusions, LinterExclusions, Matched, Section, Watched};
 pub use output::{Destination, Format, Formats, Output, ReportFormat};
+pub use pattern::Pattern;
 pub use read::Syntax;
 
 use crate::{formatters, linters};
@@ -153,7 +153,7 @@ impl Config {
 			}
 			Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(Self::default()),
 			Err(source) => Err(ConfigError::Read {
-				path: path.display().to_string(),
+				path: path.to_owned(),
 				source,
 			}),
 		}
@@ -182,7 +182,7 @@ impl Config {
 				config.version
 			)));
 		}
-		let (linters, formatters) = (schema::linter_names_list(), schema::formatter_names_list());
+		let (linters, formatters) = (linters::names(), formatters::names());
 		check_selection("linters", &config.linters.enable, &config.linters.disable, &linters).map_err(invalid)?;
 		check_selection(
 			"formatters",

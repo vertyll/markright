@@ -248,7 +248,7 @@ fn list_marker_settings_accept_only_list_markers() {
 
 #[test]
 fn registry() {
-	let names: Vec<&str> = ALL.iter().map(|f| f.about().name).collect();
+	let names = super::names();
 	assert_eq!(
 		names,
 		[

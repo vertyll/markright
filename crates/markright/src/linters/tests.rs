@@ -62,7 +62,7 @@ fn found_with(linter: Linter, repo: &Repo<'_>, path: &str, settings: &Settings) 
 
 #[test]
 fn registry() {
-	let names: Vec<&str> = ALL.iter().map(|l| l.about().name).collect();
+	let names = super::names();
 	let mut unique = names.clone();
 	unique.sort_unstable();
 	unique.dedup();

@@ -10,22 +10,14 @@ pub(super) fn version(_: &mut SchemaGenerator) -> Schema {
 	json_schema!({ "type": "string", "const": VERSION })
 }
 
-pub(super) fn linter_names_list() -> Vec<&'static str> {
-	linters::ALL.iter().map(|l| l.about().name).collect()
-}
-
-pub(super) fn formatter_names_list() -> Vec<&'static str> {
-	formatters::ALL.iter().map(|f| f.about().name).collect()
-}
-
 /// A list of linter names, each from the registry, each once.
 pub(super) fn linter_names(_: &mut SchemaGenerator) -> Schema {
-	names(&linter_names_list())
+	names(&linters::names())
 }
 
 /// A list of formatter names, each from the registry, each once.
 pub(super) fn formatter_names(_: &mut SchemaGenerator) -> Schema {
-	names(&formatter_names_list())
+	names(&formatters::names())
 }
 
 fn names(names: &[&str]) -> Schema {

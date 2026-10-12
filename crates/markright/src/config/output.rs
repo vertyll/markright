@@ -1,5 +1,6 @@
 //! Where `markright run` writes issues.
 
+use std::fmt;
 use std::path::PathBuf;
 
 use schemars::{JsonSchema, Schema, SchemaGenerator, json_schema};
@@ -44,10 +45,53 @@ impl Default for Formats {
 }
 
 impl Formats {
+	/// Where `format` goes, when the file sets it.
+	#[must_use]
+	pub fn get(&self, format: ReportFormat) -> Option<&Destination> {
+		let format = match format {
+			ReportFormat::Text => &self.text,
+			ReportFormat::Checkstyle => &self.checkstyle,
+			ReportFormat::Sarif => &self.sarif,
+		};
+		format.as_ref().map(|f| &f.path)
+	}
+
 	/// Whether no format is set, so text goes to the standard output.
 	#[must_use]
 	pub fn is_empty(&self) -> bool {
-		self.text.is_none() && self.checkstyle.is_none() && self.sarif.is_none()
+		ReportFormat::ALL.iter().all(|&format| self.get(format).is_none())
+	}
+}
+
+/// A format `markright run` can write issues in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ReportFormat {
+	/// One issue per line, then a summary.
+	Text,
+	/// Checkstyle XML.
+	Checkstyle,
+	/// SARIF 2.1.0.
+	Sarif,
+}
+
+impl ReportFormat {
+	/// Every format, in the order they are written.
+	pub const ALL: [Self; 3] = [Self::Text, Self::Checkstyle, Self::Sarif];
+
+	/// The format's key under `output.formats`.
+	#[must_use]
+	pub fn name(self) -> &'static str {
+		match self {
+			Self::Text => "text",
+			Self::Checkstyle => "checkstyle",
+			Self::Sarif => "sarif",
+		}
+	}
+}
+
+impl fmt::Display for ReportFormat {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.write_str(self.name())
 	}
 }
 

@@ -1,4 +1,5 @@
-use super::{About, Fix, Formatter, Settings, V0_1_0, by_line, texts};
+use super::{About, Fix, Formatter, Settings, by_line, texts};
+use crate::FIRST_RELEASE;
 use crate::markdown::Document;
 
 pub(super) struct ListMarker;
@@ -9,7 +10,7 @@ impl Formatter for ListMarker {
 			name: "list-marker",
 			description: "marks the items of an unordered list with `-`, or the marker its settings choose",
 			message: "list item marked differently from the configured marker",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: "* first\n* second\n",
 		}
 	}
@@ -19,8 +20,11 @@ impl Formatter for ListMarker {
 		let mut out = texts(d);
 		for bullet in &d.bullets {
 			let i = bullet.line - 1;
-			if bullet.marker != marker.as_char() && !bullet.adjacent && !d.lines[i].code {
-				out[i].replace_range(bullet.column..bullet.column + bullet.marker.len_utf8(), marker.as_str());
+			if bullet.marker != marker && !bullet.adjacent && !d.lines[i].code {
+				out[i].replace_range(
+					bullet.column..bullet.column + bullet.marker.as_str().len(),
+					marker.as_str(),
+				);
 			}
 		}
 		by_line(&d.lines, out)

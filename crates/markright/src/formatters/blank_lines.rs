@@ -1,4 +1,5 @@
-use super::{About, Fix, Formatter, Settings, V0_1_0};
+use super::{About, Fix, Formatter, Settings};
+use crate::FIRST_RELEASE;
 use crate::markdown::Document;
 use crate::markdown::Line;
 
@@ -10,7 +11,7 @@ impl Formatter for BlankLines {
 			name: "blank-lines",
 			description: "leaves at most one blank line in a row outside code",
 			message: "more than one blank line in a row",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: "First paragraph.\n\n\n\nSecond paragraph.\n",
 		}
 	}

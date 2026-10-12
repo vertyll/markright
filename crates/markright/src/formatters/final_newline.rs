@@ -1,5 +1,6 @@
 use super::blank_lines::content_end;
-use super::{About, Fix, Formatter, Settings, V0_1_0, texts};
+use super::{About, Fix, Formatter, Settings, texts};
+use crate::FIRST_RELEASE;
 use crate::markdown::Document;
 
 pub(super) struct FinalNewline;
@@ -10,7 +11,7 @@ impl Formatter for FinalNewline {
 			name: "final-newline",
 			description: "ends the file with exactly one newline",
 			message: "the file does not end with exactly one newline",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: "The last line, without a newline",
 		}
 	}

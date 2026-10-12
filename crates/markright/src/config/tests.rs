@@ -1,5 +1,5 @@
-use super::{Config, ConfigError, Destination, ExclusionKey, Syntax, TOML_FILE, YAML_FILE as FILE};
-use crate::formatters::settings::Marker;
+use super::{Config, ConfigError, Destination, ExclusionKey, Section, Syntax, TOML_FILE, YAML_FILE as FILE};
+use crate::markdown::Marker;
 use crate::{formatters, linters};
 
 fn parse(text: &str) -> Result<Config, ConfigError> {
@@ -249,12 +249,12 @@ fn hits_and_watched() {
 	);
 	assert_eq!(
 		config.linter_excluded("used/x.md", "anchors", "m").1,
-		[ExclusionKey::LinterPath(0)]
+		[ExclusionKey::Path {
+			section: Section::Linters,
+			index: 0
+		}]
 	);
-	assert_eq!(
-		config.linter_excluded("a.md", "links", "m").1,
-		[ExclusionKey::LinterRule(0)]
-	);
+	assert_eq!(config.linter_excluded("a.md", "links", "m").1, [ExclusionKey::Rule(0)]);
 	let watched = config.watched();
 	let keys: Vec<String> = watched.iter().map(|w| w.key.to_string()).collect();
 	assert_eq!(

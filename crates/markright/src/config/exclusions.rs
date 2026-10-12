@@ -120,29 +120,51 @@ pub struct FormatterExclusions {
 	pub paths_except: Vec<Pattern>,
 }
 
+/// A section of the file that has exclusions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Section {
+	/// `formatters`
+	Formatters,
+	/// `linters`
+	Linters,
+}
+
+impl fmt::Display for Section {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.write_str(match self {
+			Self::Formatters => "formatters",
+			Self::Linters => "linters",
+		})
+	}
+}
+
 /// One exclusion of the file, as its key there names it, such as `linters.exclusions.paths[0]`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ExclusionKey {
-	/// `formatters.exclusions.paths[i]`
-	FormatterPath(usize),
-	/// `formatters.exclusions.paths-except[i]`
-	FormatterPathExcept(usize),
-	/// `linters.exclusions.paths[i]`
-	LinterPath(usize),
-	/// `linters.exclusions.paths-except[i]`
-	LinterPathExcept(usize),
-	/// `linters.exclusions.rules[i]`
-	LinterRule(usize),
+	/// `<section>.exclusions.paths[index]`
+	Path {
+		/// The section.
+		section: Section,
+		/// The pattern's place in the list.
+		index: usize,
+	},
+	/// `<section>.exclusions.paths-except[index]`
+	PathExcept {
+		/// The section.
+		section: Section,
+		/// The pattern's place in the list.
+		index: usize,
+	},
+	/// `linters.exclusions.rules[index]`
+	Rule(usize),
 }
 
 impl fmt::Display for ExclusionKey {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			Self::FormatterPath(i) => write!(f, "formatters.exclusions.paths[{i}]"),
-			Self::FormatterPathExcept(i) => write!(f, "formatters.exclusions.paths-except[{i}]"),
-			Self::LinterPath(i) => write!(f, "linters.exclusions.paths[{i}]"),
-			Self::LinterPathExcept(i) => write!(f, "linters.exclusions.paths-except[{i}]"),
-			Self::LinterRule(i) => write!(f, "linters.exclusions.rules[{i}]"),
+			Self::Path { section, index } => write!(f, "{section}.exclusions.paths[{index}]"),
+			Self::PathExcept { section, index } => write!(f, "{section}.exclusions.paths-except[{index}]"),
+			Self::Rule(index) => write!(f, "linters.exclusions.rules[{index}]"),
 		}
 	}
 }
@@ -156,51 +178,84 @@ pub struct Watched {
 	pub warning: String,
 }
 
-/// Whether `paths` and `except` exclude `path`, and the keys of the patterns that matched it. With `except` set, a
-/// path it does not match is excluded too.
-fn excludes(
-	paths: &[Pattern],
-	except: &[Pattern],
-	key: fn(usize) -> ExclusionKey,
-	except_key: fn(usize) -> ExclusionKey,
-	path: &str,
-) -> (bool, Vec<ExclusionKey>) {
-	let matching = |patterns: &[Pattern], key: fn(usize) -> ExclusionKey| {
-		patterns
-			.iter()
-			.enumerate()
-			.filter(|(_, p)| p.matches(path))
-			.map(|(i, _)| key(i))
-			.collect::<Vec<_>>()
-	};
-	let mut hits = matching(paths, key);
-	let excluded = !hits.is_empty();
-	let kept = matching(except, except_key);
-	let excluded = excluded || (!except.is_empty() && kept.is_empty());
-	hits.extend(kept);
-	(excluded, hits)
+/// The path patterns of a section: those that exclude a document, and those that keep only the documents they
+/// match.
+struct PathFilter<'a> {
+	section: Section,
+	paths: &'a [Pattern],
+	except: &'a [Pattern],
 }
 
-fn watched(
-	paths: &[Pattern],
-	except: &[Pattern],
-	key: fn(usize) -> ExclusionKey,
-	except_key: fn(usize) -> ExclusionKey,
-) -> Vec<Watched> {
-	let warn = |key: ExclusionKey, p: &Pattern| Watched {
-		key,
-		warning: format!("{key}: {:?} matches no document", p.as_str()),
-	};
-	let paths = paths.iter().enumerate().map(|(i, p)| warn(key(i), p));
-	paths
-		.chain(except.iter().enumerate().map(|(i, p)| warn(except_key(i), p)))
-		.collect()
+impl PathFilter<'_> {
+	/// Whether the patterns exclude `path`, and the keys of those that matched it. With `except` set, a path it does
+	/// not match is excluded too.
+	fn exclude(&self, path: &str) -> (bool, Vec<ExclusionKey>) {
+		let section = self.section;
+		let matching = |patterns: &[Pattern]| -> Vec<usize> {
+			patterns
+				.iter()
+				.enumerate()
+				.filter(|(_, p)| p.matches(path))
+				.map(|(index, _)| index)
+				.collect()
+		};
+		let (hits, kept) = (matching(self.paths), matching(self.except));
+		let excluded = !hits.is_empty() || (!self.except.is_empty() && kept.is_empty());
+		let keys = hits
+			.into_iter()
+			.map(|index| ExclusionKey::Path { section, index })
+			.chain(
+				kept.into_iter()
+					.map(|index| ExclusionKey::PathExcept { section, index }),
+			);
+		(excluded, keys.collect())
+	}
+
+	/// Every pattern, with the warning printed when it matched nothing.
+	fn watched(&self) -> impl Iterator<Item = Watched> {
+		let section = self.section;
+		let warn = |key: ExclusionKey, p: &Pattern| Watched {
+			key,
+			warning: format!("{key}: {:?} matches no document", p.as_str()),
+		};
+		let paths = self
+			.paths
+			.iter()
+			.enumerate()
+			.map(move |(index, p)| warn(ExclusionKey::Path { section, index }, p));
+		let except = self
+			.except
+			.iter()
+			.enumerate()
+			.map(move |(index, p)| warn(ExclusionKey::PathExcept { section, index }, p));
+		paths.chain(except)
+	}
+}
+
+impl LinterExclusions {
+	fn paths(&self) -> PathFilter<'_> {
+		PathFilter {
+			section: Section::Linters,
+			paths: &self.paths,
+			except: &self.paths_except,
+		}
+	}
+}
+
+impl FormatterExclusions {
+	fn paths(&self) -> PathFilter<'_> {
+		PathFilter {
+			section: Section::Formatters,
+			paths: &self.paths,
+			except: &self.paths_except,
+		}
+	}
 }
 
 impl LinterExclusions {
 	pub(super) fn check(&self, linters: &[&str]) -> Result<(), String> {
 		for (i, rule) in self.rules.iter().enumerate() {
-			let key = ExclusionKey::LinterRule(i);
+			let key = ExclusionKey::Rule(i);
 			if rule.path.is_some() && rule.path_except.is_some() {
 				return Err(format!("{key}: path and path-except cannot both be set"));
 			}
@@ -235,27 +290,13 @@ impl Config {
 	/// Whether the formatters leave the document at `path` alone, and the exclusions that matched it.
 	#[must_use]
 	pub fn formatter_excluded(&self, path: &str) -> (bool, Vec<ExclusionKey>) {
-		let e = &self.formatters.exclusions;
-		excludes(
-			&e.paths,
-			&e.paths_except,
-			ExclusionKey::FormatterPath,
-			ExclusionKey::FormatterPathExcept,
-			path,
-		)
+		self.formatters.exclusions.paths().exclude(path)
 	}
 
 	/// Whether the linter exclusion paths cover the document at `path`, and the exclusions that matched it.
 	#[must_use]
 	pub fn linter_path_excluded(&self, path: &str) -> (bool, Vec<ExclusionKey>) {
-		let e = &self.linters.exclusions;
-		excludes(
-			&e.paths,
-			&e.paths_except,
-			ExclusionKey::LinterPath,
-			ExclusionKey::LinterPathExcept,
-			path,
-		)
+		self.linters.exclusions.paths().exclude(path)
 	}
 
 	/// Whether an issue `linter` found at `path`, with `message`, is dropped, and the exclusions that matched it.
@@ -265,7 +306,7 @@ impl Config {
 		let rules = &self.linters.exclusions.rules;
 		match rules.iter().position(|rule| rule.matches(path, linter, message)) {
 			Some(i) => {
-				hits.push(ExclusionKey::LinterRule(i));
+				hits.push(ExclusionKey::Rule(i));
 				(true, hits)
 			}
 			None => (excluded, hits),
@@ -276,25 +317,15 @@ impl Config {
 	#[must_use]
 	pub fn watched(&self) -> Vec<Watched> {
 		let mut out = Vec::new();
-		let f = &self.formatters.exclusions;
-		if f.warn_unused {
-			out.extend(watched(
-				&f.paths,
-				&f.paths_except,
-				ExclusionKey::FormatterPath,
-				ExclusionKey::FormatterPathExcept,
-			));
+		let formatters = &self.formatters.exclusions;
+		if formatters.warn_unused {
+			out.extend(formatters.paths().watched());
 		}
-		let l = &self.linters.exclusions;
-		if l.warn_unused {
-			out.extend(watched(
-				&l.paths,
-				&l.paths_except,
-				ExclusionKey::LinterPath,
-				ExclusionKey::LinterPathExcept,
-			));
-			out.extend((0..l.rules.len()).map(|i| {
-				let key = ExclusionKey::LinterRule(i);
+		let linters = &self.linters.exclusions;
+		if linters.warn_unused {
+			out.extend(linters.paths().watched());
+			out.extend((0..linters.rules.len()).map(|i| {
+				let key = ExclusionKey::Rule(i);
 				Watched {
 					key,
 					warning: format!("{key} matches no issue"),

@@ -1,7 +1,7 @@
-use super::{About, Context, DocumentLinter, Example, V0_1_0};
-use crate::Error;
+use super::{About, Context, DocumentLinter, Example};
 use crate::issue::Finding;
 use crate::markdown::Document;
+use crate::{Error, FIRST_RELEASE};
 
 pub(super) struct Blockquotes;
 
@@ -10,7 +10,7 @@ impl DocumentLinter for Blockquotes {
 		About {
 			name: "blockquotes",
 			description: "a line that continues a blockquote's paragraph starts with `>`",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new(
 				"> A quote that\ngoes on without the marker.\n",
 				"> A quote that\n> goes on with the marker.\n",

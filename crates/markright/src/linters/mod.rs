@@ -206,9 +206,6 @@ impl<'a> Repo<'a> {
 	}
 }
 
-/// The first release, which every rule is part of.
-const V0_1_0: &str = "v0.1.0";
-
 /// The index the index linter checks and the readme-links linter expects the README to link, unless the
 /// configuration names others.
 const INDEX_DOCUMENT: &str = "CONTENTS.md";

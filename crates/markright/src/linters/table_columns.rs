@@ -1,7 +1,7 @@
-use super::{About, Context, DocumentLinter, Example, V0_1_0};
-use crate::Error;
+use super::{About, Context, DocumentLinter, Example};
 use crate::issue::Finding;
 use crate::markdown::{Document, table_cells};
+use crate::{Error, FIRST_RELEASE};
 
 pub(super) struct TableColumns;
 
@@ -10,7 +10,7 @@ impl DocumentLinter for TableColumns {
 		About {
 			name: "table-columns",
 			description: "a table row has no more cells than the header",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new(
 				"| Name | Role |\n|---|---|\n| markright | linter | formatter |\n",
 				"| Name | Role |\n|---|---|\n| markright | linter and formatter |\n",

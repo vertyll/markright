@@ -4,6 +4,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::markdown::Marker;
+
 /// The settings of the formatters, by formatter.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
@@ -19,41 +21,4 @@ pub struct Settings {
 pub struct ListMarker {
 	/// The marker of every item of an unordered list.
 	pub marker: Marker,
-}
-
-/// A marker `CommonMark` allows for an unordered list.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub enum Marker {
-	/// `-`
-	#[default]
-	#[serde(rename = "-")]
-	Dash,
-	/// `*`
-	#[serde(rename = "*")]
-	Star,
-	/// `+`
-	#[serde(rename = "+")]
-	Plus,
-}
-
-impl Marker {
-	/// The marker.
-	#[must_use]
-	pub fn as_char(self) -> char {
-		match self {
-			Self::Dash => '-',
-			Self::Star => '*',
-			Self::Plus => '+',
-		}
-	}
-
-	/// The marker as written.
-	#[must_use]
-	pub fn as_str(self) -> &'static str {
-		match self {
-			Self::Dash => "-",
-			Self::Star => "*",
-			Self::Plus => "+",
-		}
-	}
 }

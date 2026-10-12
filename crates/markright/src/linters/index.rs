@@ -1,4 +1,5 @@
-use super::{About, Context, EXAMPLE_GUIDE, Example, INDEX_DOCUMENT, RepositoryLinter, V0_1_0};
+use super::{About, Context, EXAMPLE_GUIDE, Example, INDEX_DOCUMENT, RepositoryLinter};
+use crate::FIRST_RELEASE;
 use crate::issue::Finding;
 
 pub(super) struct Index;
@@ -8,7 +9,7 @@ impl RepositoryLinter for Index {
 		About {
 			name: "index",
 			description: "the index document links every Markdown document of the repository",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new(
 				"# Contents\n\n- [Guide](docs/guide.md)\n",
 				"# Contents\n\n- [Guide](docs/guide.md)\n- [Setup](docs/setup.md)\n",

@@ -1,7 +1,7 @@
-use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, V0_1_0};
-use crate::Error;
+use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example};
 use crate::issue::Finding;
 use crate::markdown::Document;
+use crate::{Error, FIRST_RELEASE};
 
 pub(super) struct HeadingIncrement;
 
@@ -10,7 +10,7 @@ impl DocumentLinter for HeadingIncrement {
 		About {
 			name: "heading-increment",
 			description: "a heading is at most one level deeper than the heading before it",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new("# Guide\n\n### Install\n", EXAMPLE_GUIDE.1),
 		}
 	}

@@ -2,10 +2,10 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-use super::{About, Context, DocumentLinter, Example, V0_1_0};
-use crate::Error;
+use super::{About, Context, DocumentLinter, Example};
 use crate::issue::Finding;
 use crate::markdown::{Document, is_table_row};
+use crate::{Error, FIRST_RELEASE};
 
 static LONG_URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://[^\t\n\f\r ]{60,}").expect("valid pattern"));
 
@@ -16,7 +16,7 @@ impl DocumentLinter for LineLength {
 		About {
 			name: "line-length",
 			description: "a line is at most the configured number of characters",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new(
 				"This sentence keeps going well past the limit of one hundred and twenty characters, so it is hard to read side by side in a diff.\n",
 				"This sentence stops before the limit of one hundred and twenty characters\nand goes on on the next line.\n",

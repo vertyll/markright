@@ -1,8 +1,9 @@
 use proptest::prelude::*;
 
-use super::settings::{self, Marker, Settings};
+use super::settings::{self, Settings};
 use super::width::display_width;
 use super::{ALL, Fix, Formatter, arrows, blank_lines, final_newline, list_marker, tables, trailing_whitespace};
+use crate::markdown::Marker;
 use crate::markdown::{Document, table_cells};
 
 /// Runs `formatter` on `text`, parsed, with the lines `in_code` marks as code as well, as a diagram block would be.

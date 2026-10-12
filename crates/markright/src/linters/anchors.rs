@@ -1,7 +1,7 @@
-use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, V0_1_0, escapes, targets};
-use crate::Error;
+use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, escapes, targets};
 use crate::issue::Finding;
 use crate::markdown::Document;
+use crate::{Error, FIRST_RELEASE};
 
 pub(super) struct Anchors;
 
@@ -10,7 +10,7 @@ impl DocumentLinter for Anchors {
 		About {
 			name: "anchors",
 			description: "a `#fragment` matches a heading of the target document",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new(
 				"See [installing](docs/guide.md#setup).\n",
 				"See [installing](docs/guide.md#install).\n",

@@ -7,7 +7,10 @@ use pulldown_cmark::{BrokenLink, CodeBlockKind, Event, LinkType, Options, Parser
 
 use super::anchors::Anchors;
 use super::lines::LineIndex;
-use super::{Bullet, Definition, Document, Fence, Heading, Line, Link, Reference, Table, destination, normalize_label};
+use super::{
+	Bullet, Definition, Document, Fence, Heading, Line, Link, LinkKind, Marker, Reference, Table, destination,
+	normalize_label,
+};
 
 /// The extensions GFM adds that change what a document holds: tables, strikethrough and task lists. Alerts are left
 /// to the alerts linter, which needs to see their tags.
@@ -284,13 +287,19 @@ impl<'a> Walker<'a> {
 					self.protect(written);
 				}
 				let text = gathering.text.trim().to_owned();
+				let kind = if image {
+					LinkKind::Image { alt: text }
+				} else {
+					LinkKind::Inline {
+						text,
+						has_content: gathering.has_content,
+					}
+				};
 				let found = Link {
 					target,
 					line,
 					destination,
-					image,
-					text,
-					has_content: gathering.has_content,
+					kind,
 				};
 				self.links.push((start, found));
 			}
@@ -338,11 +347,7 @@ impl<'a> Walker<'a> {
 		let Some(&OpenList { ordered: false, index }) = self.open_lists.last() else {
 			return;
 		};
-		let Some(marker) = self.source[range.start..]
-			.chars()
-			.next()
-			.filter(|c| matches!(c, '-' | '*' | '+'))
-		else {
+		let Some(marker) = self.source[range.start..].chars().next().and_then(Marker::from_char) else {
 			return;
 		};
 		let bullet = Bullet {
@@ -422,9 +427,7 @@ impl<'a> Walker<'a> {
 				target: target.clone(),
 				line,
 				destination: columns,
-				image: false,
-				text: String::new(),
-				has_content: true,
+				kind: LinkKind::Definition,
 			};
 			definition_links.push(entry);
 			let definition = Definition {

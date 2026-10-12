@@ -1,4 +1,5 @@
-use super::{About, Fix, Formatter, Settings, V0_1_0, each_prose_line};
+use super::{About, Fix, Formatter, Settings, each_prose_line};
+use crate::FIRST_RELEASE;
 use crate::markdown::Document;
 
 pub(super) struct TrailingWhitespace;
@@ -9,7 +10,7 @@ impl Formatter for TrailingWhitespace {
 			name: "trailing-whitespace",
 			description: "removes spaces and tabs at the end of a line",
 			message: "trailing whitespace",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: "A line that ends in spaces.   \nThe next line.\n",
 		}
 	}

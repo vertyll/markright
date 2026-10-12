@@ -13,8 +13,8 @@ use std::path::{Path, PathBuf};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-pub use exclusions::{ExclusionKey, ExclusionRule, FormatterExclusions, LinterExclusions, Pattern, Watched};
-pub use output::{Destination, Format, Formats, Output};
+pub use exclusions::{ExclusionKey, ExclusionRule, FormatterExclusions, LinterExclusions, Pattern, Section, Watched};
+pub use output::{Destination, Format, Formats, Output, ReportFormat};
 pub use read::Syntax;
 
 use crate::{formatters, linters};

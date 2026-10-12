@@ -3,7 +3,8 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-use super::{About, Fix, Formatter, Settings, V0_1_0, each_prose_line};
+use super::{About, Fix, Formatter, Settings, each_prose_line};
+use crate::FIRST_RELEASE;
 use crate::markdown::Document;
 
 const ARROWS: [char; 3] = ['→', '←', '↔'];
@@ -20,7 +21,7 @@ impl Formatter for Arrows {
 			name: "arrows",
 			description: "`->`, `<-` and `<->` become `→`, `←` and `↔`, with a space on each side",
 			message: "ASCII arrow or missing space around an arrow",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: "Request -> gateway -> service\n",
 		}
 	}

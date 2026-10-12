@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use proptest::prelude::*;
 
 use super::anchors::slugify;
-use super::{Document, Reference, Table, is_external};
+use super::{Document, LinkKind, Marker, Reference, Table, is_external};
 
 fn code(d: &Document) -> Vec<bool> {
 	d.lines.iter().map(|line| line.code).collect()
@@ -242,17 +242,28 @@ fn link_destinations_are_placed() {
 
 #[test]
 fn link_texts() {
-	let d = Document::parse("[The *guide*](a.md) ![](b.png) [![badge](c.svg)](d.md) [](e.md) [`code`](f.md)\n");
-	let texts: Vec<(&str, bool)> = d.links.iter().map(|l| (l.text.as_str(), l.has_content)).collect();
+	let d = Document::parse(
+		"[The *guide*](a.md) ![](b.png) [![badge](c.svg)](d.md) [](e.md) [`code`](f.md)
+
+[x]: g.md
+",
+	);
+	let kinds: Vec<LinkKind> = d.links.into_iter().map(|l| l.kind).collect();
+	let inline = |text: &str, has_content| LinkKind::Inline {
+		text: text.to_owned(),
+		has_content,
+	};
+	let image = |alt: &str| LinkKind::Image { alt: alt.to_owned() };
 	assert_eq!(
-		texts,
+		kinds,
 		[
-			("The guide", true),
-			("", false),
-			("", true),
-			("badge", true),
-			("", false),
-			("code", true)
+			inline("The guide", true),
+			image(""),
+			inline("", true),
+			image("badge"),
+			inline("", false),
+			inline("code", true),
+			LinkKind::Definition,
 		]
 	);
 }
@@ -260,7 +271,7 @@ fn link_texts() {
 #[test]
 fn bullets_and_adjacent_lists() {
 	let d = Document::parse("* a\n+ b\n\n---\n\n- c\n\n1. x\n   * y\n");
-	let got: Vec<(usize, usize, char, bool)> = d
+	let got: Vec<(usize, usize, Marker, bool)> = d
 		.bullets
 		.iter()
 		.map(|b| (b.line, b.column, b.marker, b.adjacent))
@@ -268,19 +279,13 @@ fn bullets_and_adjacent_lists() {
 	assert_eq!(
 		got,
 		[
-			(1, 0, '*', true),
-			(2, 0, '+', true),
-			(6, 0, '-', true),
-			(9, 3, '*', false)
+			(1, 0, Marker::Star, true),
+			(2, 0, Marker::Plus, true),
+			(6, 0, Marker::Dash, true),
+			(9, 3, Marker::Star, false)
 		]
 	);
-	let d = Document::parse(
-		"+ a
-
-[x]: y.md
-+ b
-",
-	);
+	let d = Document::parse("+ a\n\n[x]: y.md\n+ b\n");
 	assert!(
 		d.bullets.iter().all(|b| !b.adjacent),
 		"a definition keeps two lists apart: {:?}",

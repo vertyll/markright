@@ -1,5 +1,6 @@
 use super::width::display_width;
-use super::{About, Fix, Formatter, Settings, V0_1_0, by_line, texts};
+use super::{About, Fix, Formatter, Settings, by_line, texts};
+use crate::FIRST_RELEASE;
 use crate::markdown::{Document, is_table_row, table_cells};
 
 pub(super) struct Tables;
@@ -10,7 +11,7 @@ impl Formatter for Tables {
 			name: "tables",
 			description: "pads every column of a table to one width",
 			message: "table columns are not aligned",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: "| Name | Role |\n|---|---|\n| markright | formats and lints Markdown |\n",
 		}
 	}

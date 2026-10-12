@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 pub use text::text;
 
-use crate::config::{Destination, Formats};
+use crate::config::{Destination, Formats, ReportFormat};
 use crate::issue::Issue;
 
 /// A formatter or linter as a report lists it.
@@ -35,16 +35,14 @@ pub struct Streams<'a> {
 #[error("writing the {format} report{}: {source}", path.as_ref().map(|p| format!(" to {}", p.display())).unwrap_or_default())]
 pub struct OutputError {
 	/// The format.
-	pub format: &'static str,
+	pub format: ReportFormat,
 	/// The file, when it went to one.
 	pub path: Option<PathBuf>,
 	/// Why.
 	pub source: io::Error,
 }
 
-type Writer = fn(&mut dyn Write, &[Issue], &[Rule]) -> io::Result<()>;
-
-/// Writes `issues` in every format `formats` sets.
+/// Writes `issues` in every format `formats` sets, or as text to the standard output when it sets none.
 ///
 /// # Errors
 ///
@@ -57,21 +55,18 @@ pub fn write(
 ) -> Result<(), OutputError> {
 	let text_only = Formats::default();
 	let formats = if formats.is_empty() { &text_only } else { formats };
-	let writers: [(&'static str, _, Writer); 3] = [
-		("text", &formats.text, |w, issues, _| text::write(w, issues)),
-		("checkstyle", &formats.checkstyle, checkstyle::write),
-		("sarif", &formats.sarif, sarif::write),
-	];
-	for (format, destination, write) in writers {
-		let Some(destination) = destination else { continue };
+	for format in ReportFormat::ALL {
+		let Some(destination) = formats.get(format) else {
+			continue;
+		};
 		let error = |path: Option<PathBuf>| move |source| OutputError { format, path, source };
-		match &destination.path {
-			Destination::Stdout => write(streams.stdout, issues, rules).map_err(error(None))?,
-			Destination::Stderr => write(streams.stderr, issues, rules).map_err(error(None))?,
+		match destination {
+			Destination::Stdout => report(format, streams.stdout, issues, rules).map_err(error(None))?,
+			Destination::Stderr => report(format, streams.stderr, issues, rules).map_err(error(None))?,
 			Destination::File(path) => {
 				let to_file = || -> io::Result<()> {
 					let mut file = BufWriter::new(File::create(path)?);
-					write(&mut file, issues, rules)?;
+					report(format, &mut file, issues, rules)?;
 					file.into_inner().map_err(io::IntoInnerError::into_error)?.sync_all()
 				};
 				to_file().map_err(error(Some(path.clone())))?;
@@ -79,6 +74,15 @@ pub fn write(
 		}
 	}
 	Ok(())
+}
+
+/// Writes `issues` to `w` in `format`.
+fn report(format: ReportFormat, w: &mut dyn Write, issues: &[Issue], rules: &[Rule]) -> io::Result<()> {
+	match format {
+		ReportFormat::Text => text::write(w, issues),
+		ReportFormat::Checkstyle => checkstyle::write(w, issues),
+		ReportFormat::Sarif => sarif::write(w, issues, rules),
+	}
 }
 
 #[cfg(test)]

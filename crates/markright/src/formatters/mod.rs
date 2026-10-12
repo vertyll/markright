@@ -47,9 +47,6 @@ pub struct Fix {
 	pub changed: Vec<usize>,
 }
 
-/// The first release, which every rule is part of.
-const V0_1_0: &str = "v0.1.0";
-
 /// Every formatter, in the order they run. Those that remove or add lines come last.
 pub static ALL: &[&dyn Formatter] = &[
 	&trailing_whitespace::TrailingWhitespace,

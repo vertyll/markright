@@ -598,7 +598,7 @@
       "additionalProperties": false
     },
     "Marker": {
-      "description": "A marker `CommonMark` allows for an unordered list.",
+      "description": "A marker `CommonMark` allows for an item of an unordered list.",
       "oneOf": [
         {
           "description": "`-`",

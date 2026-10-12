@@ -13,3 +13,6 @@ pub mod output;
 pub mod runner;
 
 pub use error::Error;
+
+/// The release every rule has been part of since: the first.
+pub(crate) const FIRST_RELEASE: &str = "v0.1.0";

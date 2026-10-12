@@ -13,6 +13,9 @@ use std::collections::{BTreeMap, HashSet};
 use std::fmt;
 use std::ops::Range;
 
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
 pub use tables::{is_table_row, table_cells};
 
 /// A parsed Markdown file.
@@ -92,13 +95,51 @@ pub struct Bullet {
 	pub line: usize,
 	/// The byte of the line the marker is at.
 	pub column: usize,
-	/// `-`, `*` or `+`.
-	pub marker: char,
+	/// The marker.
+	pub marker: Marker,
 	/// Whether the list stands right next to another list, which only a different marker keeps apart.
 	pub adjacent: bool,
 }
 
-/// An inline link, an image or a reference definition.
+/// A marker `CommonMark` allows for an item of an unordered list.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+pub enum Marker {
+	/// `-`
+	#[default]
+	#[serde(rename = "-")]
+	Dash,
+	/// `*`
+	#[serde(rename = "*")]
+	Star,
+	/// `+`
+	#[serde(rename = "+")]
+	Plus,
+}
+
+impl Marker {
+	/// The marker `c` is, if it is one.
+	#[must_use]
+	pub fn from_char(c: char) -> Option<Self> {
+		match c {
+			'-' => Some(Self::Dash),
+			'*' => Some(Self::Star),
+			'+' => Some(Self::Plus),
+			_ => None,
+		}
+	}
+
+	/// The marker as written.
+	#[must_use]
+	pub fn as_str(self) -> &'static str {
+		match self {
+			Self::Dash => "-",
+			Self::Star => "*",
+			Self::Plus => "+",
+		}
+	}
+}
+
+/// Something in a document with a destination: an inline link, an image or a reference definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Link {
 	/// The destination, with escapes and entities resolved.
@@ -107,12 +148,27 @@ pub struct Link {
 	pub line: usize,
 	/// The bytes of `line` the destination is written in, inside any angle brackets; empty when it writes none.
 	pub destination: Range<usize>,
-	/// Whether this is an image.
-	pub image: bool,
-	/// The text of a link or the alternative text of an image, without markup.
-	pub text: String,
-	/// Whether the link or image has any content at all, images included.
-	pub has_content: bool,
+	/// What it is, and what it shows.
+	pub kind: LinkKind,
+}
+
+/// What a [`Link`] is, and what it shows.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LinkKind {
+	/// An inline link, `[text](target)`.
+	Inline {
+		/// Its text, without markup.
+		text: String,
+		/// Whether it has any content at all, images included.
+		has_content: bool,
+	},
+	/// An image, `![alt](target)`.
+	Image {
+		/// Its alternative text, without markup.
+		alt: String,
+	},
+	/// A reference definition, `[label]: target`.
+	Definition,
 }
 
 /// A reference definition, `[label]: target`.

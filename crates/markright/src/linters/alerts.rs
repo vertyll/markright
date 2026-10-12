@@ -2,10 +2,10 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-use super::{About, Context, DocumentLinter, Example, V0_1_0};
-use crate::Error;
+use super::{About, Context, DocumentLinter, Example};
 use crate::issue::Finding;
 use crate::markdown::Document;
+use crate::{Error, FIRST_RELEASE};
 
 static ALERT: LazyLock<Regex> =
 	LazyLock::new(|| Regex::new(r"^[\t\n\f\r ]*>[\t\n\f\r ]*\[!([A-Za-z]+)]").expect("valid pattern"));
@@ -17,7 +17,7 @@ impl DocumentLinter for Alerts {
 		About {
 			name: "alerts",
 			description: "an alert tag is one of the allowed types and is followed by an empty `>` line",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new(
 				"> [!INFO]\n> Restart the service after a change.\n",
 				"> [!NOTE]\n>\n> Restart the service after a change.\n",

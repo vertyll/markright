@@ -1,7 +1,7 @@
-use super::{About, Context, DocumentLinter, Example, V0_1_0};
-use crate::Error;
+use super::{About, Context, DocumentLinter, Example};
 use crate::issue::Finding;
 use crate::markdown::Document;
+use crate::{Error, FIRST_RELEASE};
 
 pub(super) struct Fences;
 
@@ -10,7 +10,7 @@ impl DocumentLinter for Fences {
 		About {
 			name: "fences",
 			description: "every code block is closed",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new("```bash\nmake build\n", "```bash\nmake build\n```\n"),
 		}
 	}

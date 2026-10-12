@@ -1,4 +1,5 @@
-use super::{About, Context, Example, INDEX_DOCUMENT, RepositoryLinter, V0_1_0};
+use super::{About, Context, Example, INDEX_DOCUMENT, RepositoryLinter};
+use crate::FIRST_RELEASE;
 use crate::issue::Finding;
 
 pub(super) struct ReadmeLinks;
@@ -8,7 +9,7 @@ impl RepositoryLinter for ReadmeLinks {
 		About {
 			name: "readme-links",
 			description: "the README links each of the configured documents that exists",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new(
 				"# Project\n\nA tool.\n",
 				"# Project\n\nA tool. See the [contents](CONTENTS.md).\n",

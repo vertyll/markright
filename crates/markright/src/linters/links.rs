@@ -1,7 +1,7 @@
-use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, V0_1_0, escapes, targets};
-use crate::Error;
+use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, escapes, targets};
 use crate::issue::Finding;
-use crate::markdown::Document;
+use crate::markdown::{Document, LinkKind};
+use crate::{Error, FIRST_RELEASE};
 
 pub(super) struct Links;
 
@@ -10,7 +10,7 @@ impl DocumentLinter for Links {
 		About {
 			name: "links",
 			description: "a relative link points to a file or directory inside the repository",
-			since: V0_1_0,
+			since: FIRST_RELEASE,
 			example: Example::new("See the [guide](docs/gide.md).\n", "See the [guide](docs/guide.md).\n")
 				.with_files(&[EXAMPLE_GUIDE]),
 		}
@@ -27,7 +27,7 @@ impl DocumentLinter for Links {
 					format!("link leaves the repository: {}", target.raw),
 				));
 			} else if !c.repo.exists(file).map_err(|source| Error::Resolve {
-				linter: "links",
+				linter: self.about().name,
 				path: file.clone(),
 				source,
 			})? {
@@ -35,18 +35,22 @@ impl DocumentLinter for Links {
 			}
 		}
 		for link in &doc.links {
-			if link.target.is_empty() {
-				out.push(Finding::new(
-					path,
-					link.line,
-					format!("link without a target: [{}]()", link.text),
-				));
-			} else if !link.image && !link.has_content {
-				out.push(Finding::new(
-					path,
-					link.line,
-					format!("link without text: []({})", link.target),
-				));
+			match &link.kind {
+				LinkKind::Inline { text, .. } | LinkKind::Image { alt: text } if link.target.is_empty() => {
+					out.push(Finding::new(
+						path,
+						link.line,
+						format!("link without a target: [{text}]()"),
+					));
+				}
+				LinkKind::Inline { has_content: false, .. } => {
+					out.push(Finding::new(
+						path,
+						link.line,
+						format!("link without text: []({})", link.target),
+					));
+				}
+				_ => {}
 			}
 		}
 		for reference in &doc.undefined_references {

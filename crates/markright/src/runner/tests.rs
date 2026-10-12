@@ -256,7 +256,7 @@ fn a_removed_file_is_missing_in_the_next_run() {
 		config: &config,
 		mode: Mode::Lint,
 	};
-	assert!(runner.run(&AtomicBool::new(false)).unwrap().issues.is_empty());
+	assert_eq!(runner.run(&AtomicBool::new(false)).unwrap().issues, []);
 	for name in ["logo.png", "b.md"] {
 		fs::remove_file(root.path().join(name)).unwrap();
 	}

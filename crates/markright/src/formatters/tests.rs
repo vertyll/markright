@@ -283,11 +283,11 @@ fn every_example_is_fixed_once() {
 		let fixed = fix(*f, about.example);
 		assert!(!fixed.changed.is_empty(), "{}: the example is not changed", about.name);
 		let again = fix(*f, &fixed.lines.join("\n"));
-		assert!(
-			again.changed.is_empty(),
-			"{}: the fixed example is changed again: {:?}",
-			about.name,
-			again.changed
+		assert_eq!(
+			again.changed,
+			[] as [usize; 0],
+			"{}: the fixed example is changed again",
+			about.name
 		);
 	}
 }

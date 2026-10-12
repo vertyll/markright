@@ -26,7 +26,8 @@ same file runs everywhere: on Windows, run them in Git Bash, which comes with Gi
 1. Write it in a file of its own in `crates/markright/src/formatters` or `crates/markright/src/linters`, as a type
    that implements `Formatter`, `DocumentLinter` or `RepositoryLinter`:
    [Architecture: Registries](architecture.md#registries).
-2. Add it to `ALL` in that directory's `mod.rs`; its place in the list decides when it runs.
+2. Add it to `ALL` in `formatters.rs` or `linters.rs`, next to the directory; its place in the list decides when it
+   runs.
 3. When it takes settings, give them a type in `settings.rs` of the same directory, as the others there: it derives
    `Serialize`, `Deserialize` and `JsonSchema` with `#[serde(default, deny_unknown_fields)]`, implements `Default`
    with its defaults, and documents each key in a comment, which becomes its description in the schema. Let the

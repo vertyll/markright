@@ -58,16 +58,20 @@ struct Target {
 impl Target {
 	/// The configuration the command runs with, and the file it was read from, if any: the one `--config` names, or
 	/// the one the root holds, or the defaults.
-	fn configuration(&self) -> Result<(Config, Option<PathBuf>), ConfigError> {
+	fn configuration(&self) -> Result<Found, ConfigError> {
 		let path = match &self.config {
 			Some(path) => Some(path.clone()),
 			None => Config::locate(&self.root)?,
 		};
-		match path {
-			Some(path) => Ok((Config::load(&path)?, Some(path))),
-			None => Ok((Config::default(), None)),
-		}
+		let config = path.as_deref().map_or_else(|| Ok(Config::default()), Config::load)?;
+		Ok(Found { config, path })
 	}
+}
+
+/// The configuration a command runs with, and the file it was read from, if any.
+struct Found {
+	config: Config,
+	path: Option<PathBuf>,
 }
 
 /// How the command ends.
@@ -168,7 +172,7 @@ fn execute(
 		| Command::Formatters(target)
 		| Command::Config(ConfigCommand::Verify(target)) => target,
 	};
-	let (config, path) = target.configuration()?;
+	let Found { config, path } = target.configuration()?;
 	match command {
 		Command::Run(_) => lint(&target.root, &config, stdout, stderr, stop),
 		Command::Fmt(_) => format(&target.root, &config, stdout, stop),

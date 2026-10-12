@@ -81,12 +81,12 @@ fn exclusions() {
 	];
 	for (path, linter, message, want) in cases {
 		assert_eq!(
-			config.linter_excluded(path, linter, message).0,
+			config.linter_excluded(path, linter, message).excluded,
 			want,
 			"{path} {linter} {message}"
 		);
 	}
-	assert!(config.formatter_excluded("CHANGELOG.md").0 && !config.formatter_excluded("README.md").0);
+	assert!(config.formatter_excluded("CHANGELOG.md").excluded && !config.formatter_excluded("README.md").excluded);
 }
 
 #[test]
@@ -233,10 +233,14 @@ fn paths_except() {
 		("docs/api/a.md", "line-length", false),
 	];
 	for (path, linter, want) in cases {
-		assert_eq!(config.linter_excluded(path, linter, "x").0, want, "{path} {linter}");
+		assert_eq!(
+			config.linter_excluded(path, linter, "x").excluded,
+			want,
+			"{path} {linter}"
+		);
 	}
 	for (path, want) in [("README.md", true), ("docs/a.md", false), ("docs/generated/a.md", true)] {
-		assert_eq!(config.formatter_excluded(path).0, want, "{path}");
+		assert_eq!(config.formatter_excluded(path).excluded, want, "{path}");
 	}
 }
 
@@ -248,13 +252,13 @@ fn hits_and_watched() {
 		 paths: ['^never/']\n",
 	);
 	assert_eq!(
-		config.linter_excluded("used/x.md", "anchors", "m").1,
+		config.linter_excluded("used/x.md", "anchors", "m").by,
 		[ExclusionKey::Path {
 			section: Section::Linters,
 			index: 0
 		}]
 	);
-	assert_eq!(config.linter_excluded("a.md", "links", "m").1, [ExclusionKey::Rule(0)]);
+	assert_eq!(config.linter_excluded("a.md", "links", "m").by, [ExclusionKey::Rule(0)]);
 	let watched = config.watched();
 	let keys: Vec<String> = watched.iter().map(|w| w.key.to_string()).collect();
 	assert_eq!(
@@ -333,7 +337,7 @@ fn toml_says_what_yaml_says() {
 		(max(&toml), toml.formatters.settings.list_marker.marker),
 		(80, Marker::Star)
 	);
-	assert!(toml.linter_excluded("a.md", "anchors", "x").0 && !toml.linter_enabled("links"));
+	assert!(toml.linter_excluded("a.md", "anchors", "x").excluded && !toml.linter_enabled("links"));
 }
 
 #[test]

@@ -1,55 +1,16 @@
-//! Makes one pass over a repository: it formats every document, lints the result and filters the issues through the
-//! exclusions. [`Runner`] does it on disk and writes the result; [`check_documents`] does it in memory.
-
-#[cfg(feature = "disk")]
-mod disk;
-mod parallel;
+//! One pass over the documents: format every one, lint the result, and filter the issues through the exclusions.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 
-#[cfg(feature = "disk")]
-pub use disk::{Report, Runner};
-
+use super::{Checked, Mode, parallel};
 use crate::Error;
-use crate::config::{Config, ExclusionKey};
+use crate::config::{Config, ExclusionKey, Matched};
 use crate::formatters;
-use crate::fs::{Files, is_markdown};
+use crate::fs::Files;
 use crate::issue::{Finding, Issue};
 use crate::linters::{self, Context, Linter, Repo};
 use crate::markdown::Document;
-
-/// What a run does with the formatters' changes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Mode {
-	/// Reports what the formatters would change and runs the linters.
-	Lint,
-	/// Keeps what the formatters change, and runs no linter.
-	Format,
-}
-
-/// What a check found: the issues, sorted by path and line, the formatted content of every document the formatters
-/// change, by path, and the warnings for watched exclusions that matched nothing.
-#[derive(Debug, Default)]
-pub struct Checked {
-	/// The issues, sorted by path, line and message.
-	pub issues: Vec<Issue>,
-	/// The new content of each document the formatters change.
-	pub fixed: BTreeMap<String, String>,
-	/// A warning for each watched exclusion that matched nothing.
-	pub unused_exclusions: Vec<String>,
-}
-
-/// Checks a repository held in memory: every file in `documents`, by path, is part of it, and the ones ending in
-/// `.md` are the documents.
-///
-/// # Errors
-///
-/// Returns why the documents could not be checked.
-pub fn check_documents(documents: &BTreeMap<String, String>, config: &Config, mode: Mode) -> Result<Checked, Error> {
-	let paths: Vec<String> = documents.keys().filter(|p| is_markdown(p)).cloned().collect();
-	check(documents, &paths, config, mode, &AtomicBool::new(false))
-}
 
 /// Formats the documents at `paths` in `files` and, in [`Mode::Lint`], lints the result. It reads `files` and never
 /// writes to them, so it works the same on disk and in memory. It spreads the documents over the cores and stops
@@ -67,8 +28,8 @@ pub(crate) fn check(
 		issues: Vec::new(),
 		used: HashSet::new(),
 	};
-	let (docs, fixed) = pass.format_all(files, paths, stop)?;
-	let repo = Repo::new(files, docs);
+	let Formatting { documents, fixed } = pass.format_all(files, paths, stop)?;
+	let repo = Repo::new(files, documents);
 	if mode == Mode::Lint {
 		pass.lint(&repo, paths, stop)?;
 	}
@@ -87,10 +48,12 @@ pub(crate) fn check(
 	})
 }
 
-/// Parsed documents, by path.
-type Documents = BTreeMap<String, Document>;
-/// File contents, by path.
-type Contents = BTreeMap<String, String>;
+/// What formatting every document gives: each document parsed as the linters see it, and the new content of those
+/// the formatters change, by path.
+struct Formatting {
+	documents: BTreeMap<String, Document>,
+	fixed: BTreeMap<String, String>,
+}
 
 /// What one pass over the documents finds.
 struct Pass<'a> {
@@ -111,12 +74,7 @@ struct Formatted {
 impl Pass<'_> {
 	/// Reads, parses and formats every document, spread over the cores, then records the results in the order of
 	/// `paths`, so the issues and the first error are the same however the work was spread.
-	fn format_all(
-		&mut self,
-		files: &dyn Files,
-		paths: &[String],
-		stop: &AtomicBool,
-	) -> Result<(Documents, Contents), Error> {
+	fn format_all(&mut self, files: &dyn Files, paths: &[String], stop: &AtomicBool) -> Result<Formatting, Error> {
 		let skip: Vec<bool> = paths
 			.iter()
 			.map(|p| self.record(self.config.formatter_excluded(p)))
@@ -132,16 +90,19 @@ impl Pass<'_> {
 		if stop.load(Ordering::Relaxed) {
 			return Err(Error::Stopped);
 		}
-		let (mut docs, mut fixed) = (BTreeMap::new(), BTreeMap::new());
+		let mut formatting = Formatting {
+			documents: BTreeMap::new(),
+			fixed: BTreeMap::new(),
+		};
 		for (path, result) in paths.iter().zip(results) {
 			let formatted = result?;
 			self.issues.extend(formatted.issues);
 			if let Some(content) = formatted.fixed {
-				fixed.insert(path.clone(), content);
+				formatting.fixed.insert(path.clone(), content);
 			}
-			docs.insert(path.clone(), formatted.doc);
+			formatting.documents.insert(path.clone(), formatted.doc);
 		}
-		Ok((docs, fixed))
+		Ok(formatting)
 	}
 
 	/// Reads and parses the document at `path` and, unless the formatter exclusions skip it, formats it. It only reads
@@ -262,9 +223,9 @@ impl Pass<'_> {
 	}
 
 	/// Notes the exclusions that matched, for warn-unused, and passes on whether they exclude.
-	fn record(&mut self, (excluded, hits): (bool, Vec<ExclusionKey>)) -> bool {
-		self.used.extend(hits);
-		excluded
+	fn record(&mut self, matched: Matched) -> bool {
+		self.used.extend(matched.by);
+		matched.excluded
 	}
 }
 
@@ -291,39 +252,4 @@ fn lint_document(enabled: &[Linter], context: &Context<'_>, path: &str) -> Vec<R
 enum Changed {
 	No(Document),
 	Yes(Document),
-}
-
-#[cfg(all(test, feature = "disk"))]
-mod tests;
-
-#[cfg(test)]
-mod in_memory {
-	use std::collections::BTreeMap;
-
-	use super::{Mode, check_documents};
-	use crate::config::Config;
-
-	#[test]
-	fn documents_in_memory() {
-		let documents = BTreeMap::from([
-			(
-				"doc.md".to_owned(),
-				"# Title\n\nGo -> [here](guide.md) and [there](img.png).\n".to_owned(),
-			),
-			("img.png".to_owned(), String::new()),
-		]);
-		let checked = check_documents(&documents, &Config::default(), Mode::Lint).unwrap();
-		let issues: Vec<String> = checked.issues.iter().map(ToString::to_string).collect();
-		assert_eq!(
-			issues,
-			[
-				"doc.md:3: ASCII arrow or missing space around an arrow (arrows)",
-				"doc.md:3: broken link: guide.md (links)"
-			]
-		);
-		assert_eq!(
-			checked.fixed["doc.md"],
-			"# Title\n\nGo → [here](guide.md) and [there](img.png).\n"
-		);
-	}
 }

@@ -169,6 +169,16 @@ impl fmt::Display for ExclusionKey {
 	}
 }
 
+/// What the exclusions make of a document or an issue: whether they exclude it, and which of them matched it, which
+/// warn-unused counts as used.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Matched {
+	/// Whether the document or the issue is excluded.
+	pub excluded: bool,
+	/// The exclusions that matched it.
+	pub by: Vec<ExclusionKey>,
+}
+
 /// An exclusion of a section that asks for warn-unused, and the warning printed when it matched nothing in a run.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Watched {
@@ -189,7 +199,7 @@ struct PathFilter<'a> {
 impl PathFilter<'_> {
 	/// Whether the patterns exclude `path`, and the keys of those that matched it. With `except` set, a path it does
 	/// not match is excluded too.
-	fn exclude(&self, path: &str) -> (bool, Vec<ExclusionKey>) {
+	fn exclude(&self, path: &str) -> Matched {
 		let section = self.section;
 		let matching = |patterns: &[Pattern]| -> Vec<usize> {
 			patterns
@@ -208,7 +218,10 @@ impl PathFilter<'_> {
 				kept.into_iter()
 					.map(|index| ExclusionKey::PathExcept { section, index }),
 			);
-		(excluded, keys.collect())
+		Matched {
+			excluded,
+			by: keys.collect(),
+		}
 	}
 
 	/// Every pattern, with the warning printed when it matched nothing.
@@ -289,28 +302,26 @@ impl ExclusionRule {
 impl Config {
 	/// Whether the formatters leave the document at `path` alone, and the exclusions that matched it.
 	#[must_use]
-	pub fn formatter_excluded(&self, path: &str) -> (bool, Vec<ExclusionKey>) {
+	pub fn formatter_excluded(&self, path: &str) -> Matched {
 		self.formatters.exclusions.paths().exclude(path)
 	}
 
 	/// Whether the linter exclusion paths cover the document at `path`, and the exclusions that matched it.
 	#[must_use]
-	pub fn linter_path_excluded(&self, path: &str) -> (bool, Vec<ExclusionKey>) {
+	pub fn linter_path_excluded(&self, path: &str) -> Matched {
 		self.linters.exclusions.paths().exclude(path)
 	}
 
 	/// Whether an issue `linter` found at `path`, with `message`, is dropped, and the exclusions that matched it.
 	#[must_use]
-	pub fn linter_excluded(&self, path: &str, linter: &str, message: &str) -> (bool, Vec<ExclusionKey>) {
-		let (excluded, mut hits) = self.linter_path_excluded(path);
+	pub fn linter_excluded(&self, path: &str, linter: &str, message: &str) -> Matched {
+		let mut matched = self.linter_path_excluded(path);
 		let rules = &self.linters.exclusions.rules;
-		match rules.iter().position(|rule| rule.matches(path, linter, message)) {
-			Some(i) => {
-				hits.push(ExclusionKey::Rule(i));
-				(true, hits)
-			}
-			None => (excluded, hits),
+		if let Some(i) = rules.iter().position(|rule| rule.matches(path, linter, message)) {
+			matched.excluded = true;
+			matched.by.push(ExclusionKey::Rule(i));
 		}
+		matched
 	}
 
 	/// The exclusions of the sections that ask for warn-unused, in the order the file declares them.

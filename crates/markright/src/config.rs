@@ -1,6 +1,7 @@
 //! Reads the configuration file, `.markright.yaml` or `.markright.toml`: which formatters and linters run, their
 //! settings, their exclusions and where issues are written.
 
+mod error;
 mod exclusions;
 mod output;
 mod read;
@@ -13,7 +14,10 @@ use std::path::{Path, PathBuf};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-pub use exclusions::{ExclusionKey, ExclusionRule, FormatterExclusions, LinterExclusions, Pattern, Section, Watched};
+pub use error::ConfigError;
+pub use exclusions::{
+	ExclusionKey, ExclusionRule, FormatterExclusions, LinterExclusions, Matched, Pattern, Section, Watched,
+};
 pub use output::{Destination, Format, Formats, Output, ReportFormat};
 pub use read::Syntax;
 
@@ -101,43 +105,6 @@ pub enum Selection {
 	All,
 	/// Only the enabled rules run.
 	None,
-}
-
-/// Why a configuration could not be used.
-#[derive(Debug, thiserror::Error)]
-pub enum ConfigError {
-	/// The file could not be read.
-	#[error("reading {path}: {source}")]
-	Read {
-		/// The file.
-		path: String,
-		/// Why.
-		source: io::Error,
-	},
-	/// The file is not a configuration: its syntax or its structure is wrong.
-	#[error("{file}: line {line}: {message}")]
-	Parse {
-		/// The name of the file.
-		file: String,
-		/// The line of the file the problem is on.
-		line: usize,
-		/// What is wrong.
-		message: String,
-	},
-	/// The root holds both configuration files, and it would be unclear which one counts.
-	#[error("both {YAML_FILE} and {TOML_FILE} exist in {}; keep one", root.display())]
-	Ambiguous {
-		/// The root of the repository.
-		root: PathBuf,
-	},
-	/// The file reads, but what it says is not valid.
-	#[error("{file}: {message}")]
-	Invalid {
-		/// The name of the file.
-		file: String,
-		/// What is wrong.
-		message: String,
-	},
 }
 
 impl Default for Config {

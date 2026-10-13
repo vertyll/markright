@@ -1,3 +1,5 @@
+//! The index linter: the index document links every document of the repository.
+
 use super::{About, Context, EXAMPLE_GUIDE, Example, INDEX_DOCUMENT, RepositoryLinter};
 use crate::FIRST_RELEASE;
 use crate::issue::Finding;
@@ -19,19 +21,19 @@ impl RepositoryLinter for Index {
 		}
 	}
 
-	fn check(&self, c: &Context<'_>) -> Vec<Finding> {
-		let file = &c.settings.index.file;
-		if !c.repo.docs.contains_key(file) {
+	fn check(&self, context: &Context<'_>) -> Vec<Finding> {
+		let file = &context.settings.index.file;
+		if !context.repo.docs.contains_key(file) {
 			return Vec::new();
 		}
-		let linked = c.repo.linked(file);
-		let missing = c
+		let linked = context.repo.linked(file);
+		let missing = context
 			.repo
 			.docs
 			.keys()
-			.filter(|&p| p != file && !linked.contains(p) && !(c.excluded)(p));
+			.filter(|&path| path != file && !linked.contains(path) && !(context.excluded)(path));
 		missing
-			.map(|p| Finding::new(file.clone(), 1, format!("document not listed: {p}")))
+			.map(|path| Finding::new(file.clone(), 1, format!("document not listed: {path}")))
 			.collect()
 	}
 }

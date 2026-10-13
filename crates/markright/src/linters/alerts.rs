@@ -1,3 +1,5 @@
+//! The alerts linter: an alert names an allowed type and its tag stands on a line of its own.
+
 use std::sync::LazyLock;
 
 use regex::Regex;
@@ -25,14 +27,14 @@ impl DocumentLinter for Alerts {
 		}
 	}
 
-	fn check(&self, c: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
-		let allowed = &c.settings.alerts.types;
+	fn check(&self, context: &Context<'_>, path: &str, document: &Document) -> Result<Vec<Finding>, Error> {
+		let allowed = &context.settings.alerts.types;
 		let mut out = Vec::new();
-		for (i, line) in doc.lines.iter().enumerate() {
+		for (i, line) in document.lines.iter().enumerate() {
 			let Some(kind) = ALERT
 				.captures(&line.text)
 				.filter(|_| !line.code)
-				.map(|m| m[1].to_owned())
+				.map(|captures| captures[1].to_owned())
 			else {
 				continue;
 			};
@@ -40,7 +42,7 @@ impl DocumentLinter for Alerts {
 				let message = format!("unknown alert type [!{kind}] (allowed: {})", allowed.join(", "));
 				out.push(Finding::new(path, i + 1, message));
 			}
-			if doc.lines.get(i + 1).is_none_or(|next| next.text.trim() != ">") {
+			if document.lines.get(i + 1).is_none_or(|next| next.text.trim() != ">") {
 				out.push(Finding::new(
 					path,
 					i + 1,

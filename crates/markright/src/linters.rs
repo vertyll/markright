@@ -54,13 +54,13 @@ pub static ALL: &[Linter] = &[
 /// The name of every linter, in the order they run.
 #[must_use]
 pub fn names() -> Vec<&'static str> {
-	ALL.iter().map(|l| l.about().name).collect()
+	ALL.iter().map(|linter| linter.about().name).collect()
 }
 
 /// The linter called `name`.
 #[must_use]
 pub fn find(name: &str) -> Option<Linter> {
-	ALL.iter().copied().find(|l| l.about().name == name)
+	ALL.iter().copied().find(|linter| linter.about().name == name)
 }
 
 #[cfg(test)]

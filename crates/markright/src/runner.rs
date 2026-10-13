@@ -47,7 +47,7 @@ pub struct Checked {
 ///
 /// Returns why the documents could not be checked.
 pub fn check_documents(documents: &BTreeMap<String, String>, config: &Config, mode: Mode) -> Result<Checked, Error> {
-	let paths: Vec<String> = documents.keys().filter(|p| is_markdown(p)).cloned().collect();
+	let paths: Vec<String> = documents.keys().filter(|path| is_markdown(path)).cloned().collect();
 	check(documents, &paths, config, mode, &AtomicBool::new(false))
 }
 

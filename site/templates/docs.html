@@ -1,0 +1,21 @@
+{#- The layout of the documentation: its navigation, the page and the page's headings, for a page or a section. -#}
+{% extends "base.html" %}
+{% block title %}{{ page.title if page is defined else section.title }} – {{ config.title }}{% endblock %}
+{% block description %}{{ (page.description if page is defined else section.description) or config.description }}{% endblock %}
+{% block main_class %}docs{% endblock %}
+{% block main %}
+{%- set doc = page if page is defined else section %}
+<nav class="docs-nav" aria-label="Documentation" data-docs-nav>
+  <button type="button" class="docs-nav-toggle" aria-expanded="false" aria-controls="docs-nav-list" data-docs-nav-toggle>{{ <icon name="book-open" /> }} Documentation {{ <icon name="chevron-right" size={14} /> }}</button>
+  {{ <navigation current={current_path} /> }}
+</nav>
+<article class="docs-article">
+  <h1>{{ doc.title }}</h1>
+  {%- block lead %}{% endblock %}
+  <div class="content">
+    {{ doc.content | safe }}
+  </div>
+  {%- block after %}{% endblock %}
+</article>
+<aside class="docs-aside">{{ <toc toc={doc.toc} /> }}</aside>
+{% endblock %}

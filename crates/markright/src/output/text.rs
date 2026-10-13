@@ -1,3 +1,5 @@
+//! The text report: one issue per line, `path:line: message (rule)`, then how many there are.
+
 use std::io::{self, Write};
 
 use crate::issue::Issue;

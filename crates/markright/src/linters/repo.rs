@@ -87,7 +87,12 @@ impl<'a> Repo<'a> {
 	pub(super) fn linked(&self, path: &str) -> HashSet<String> {
 		self.docs
 			.get(path)
-			.map(|doc| targets(path, doc).into_iter().filter_map(|t| t.file).collect())
+			.map(|document| {
+				targets(path, document)
+					.into_iter()
+					.filter_map(|target| target.file)
+					.collect()
+			})
 			.unwrap_or_default()
 	}
 }

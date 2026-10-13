@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found – {{ config.title }}{% endblock %}
+{% block main %}
+<div class="plain">
+  <h1>Not found</h1>
+  <p>No page lives at this address. The <a href="{{ get_url(path='@/docs/_index.md') }}">documentation</a> starts here,
+  and the search at the top finds the rest.</p>
+</div>
+{% endblock %}

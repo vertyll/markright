@@ -18,6 +18,7 @@ const OPTIONS: Options = Options::ENABLE_TABLES
 	.union(Options::ENABLE_STRIKETHROUGH)
 	.union(Options::ENABLE_TASKLISTS);
 
+/// Parses `content` into a document.
 pub(super) fn parse(content: &str) -> Document {
 	let index = LineIndex::new(content);
 	let mut broken = Vec::new();
@@ -41,7 +42,7 @@ pub(super) fn parse(content: &str) -> Document {
 			span: def.span.clone(),
 		})
 		.collect();
-	definitions.sort_by_key(|d| d.span.start);
+	definitions.sort_by_key(|definition| definition.span.start);
 	let mut walker = Walker::new(content, &index);
 	for (event, range) in parser.into_offset_iter() {
 		walker.event(event, range);
@@ -76,6 +77,7 @@ struct Gathering {
 	last_end: usize,
 }
 
+/// What gathered text is for.
 enum Purpose {
 	Heading {
 		level: u8,
@@ -91,6 +93,7 @@ enum Purpose {
 	Unlisted,
 }
 
+/// Walks the parser's events and records, line by line, what the document holds.
 struct Walker<'a> {
 	source: &'a str,
 	index: &'a LineIndex,
@@ -170,7 +173,7 @@ impl<'a> Walker<'a> {
 		let list = matches!(tag, Tag::List(_)).then(|| self.lists.len());
 		if let Some(index) = list {
 			self.lists.push(range.clone());
-			if let Some(previous) = self.blocks.last().and_then(|s| s.0) {
+			if let Some(previous) = self.blocks.last().and_then(|sibling| sibling.0) {
 				self.neighbors.push((previous, index));
 			}
 		}
@@ -272,8 +275,8 @@ impl<'a> Walker<'a> {
 		let Some(gathering) = self.texts.pop() else { return };
 		match gathering.purpose {
 			Purpose::Heading { level, line } => {
-				self.anchors.heading(&gathering.text);
-				self.headings.push(Heading { level, line });
+				let anchor = self.anchors.heading(&gathering.text);
+				self.headings.push(Heading { level, line, anchor });
 			}
 			Purpose::Link {
 				target,
@@ -436,7 +439,7 @@ impl<'a> Walker<'a> {
 			};
 			definitions.entry(label.clone()).or_insert(definition);
 		}
-		let spans: Vec<&Range<usize>> = written.iter().map(|w| &w.span).collect();
+		let spans: Vec<&Range<usize>> = written.iter().map(|definition| &definition.span).collect();
 		let bullets = self.mark_adjacent(&spans);
 		self.links.sort_by_key(|(start, _)| *start);
 		let all_links = self
@@ -482,7 +485,7 @@ impl<'a> Walker<'a> {
 		let mut adjacent = vec![false; self.lists.len()];
 		for &(previous, next) in &self.neighbors {
 			let between = self.lists[previous].end..self.lists[next].start;
-			if !definitions.iter().any(|d| between.contains(&d.start)) {
+			if !definitions.iter().any(|span| between.contains(&span.start)) {
 				adjacent[previous] = true;
 				adjacent[next] = true;
 			}
@@ -519,10 +522,11 @@ fn closes_fence(opening: &str, line: &str) -> bool {
 	!closing.is_empty() && closing.starts_with(marker) && closing.trim_matches(fence).is_empty()
 }
 
+/// `line` without its blockquote markers and the space around them.
 fn strip_containers(line: &str) -> &str {
-	let mut t = line.trim();
-	while let Some(rest) = t.strip_prefix('>') {
-		t = rest.trim();
+	let mut inner = line.trim();
+	while let Some(rest) = inner.strip_prefix('>') {
+		inner = rest.trim();
 	}
-	t
+	inner
 }

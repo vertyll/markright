@@ -1,0 +1,87 @@
+{#- The components of the site's templates. Components only see what they are given. -#}
+
+{#- A decorative icon from icons.svg, size pixels square. -#}
+{% component icon(name: string, size: integer = 16) -%}
+<svg class="icon" width="{{ size }}" height="{{ size }}" aria-hidden="true" focusable="false"><use href="{{ get_url(path='icons.svg', cachebust=true) }}#{{ name }}"></use></svg>
+{%- endcomponent icon %}
+
+{#- What a rule offers, as badges: extra is the extra of its page. -#}
+{% component badges(extra: map) -%}
+<span class="rule-badges">
+  {%- if extra.new %}<span class="rule-badge rule-badge-new">{{ <icon name="sparkles" size={12} /> }} New</span>{% endif -%}
+  {%- if extra.autofix %}<span class="rule-badge rule-badge-autofix">{{ <icon name="bolt" size={12} /> }} Autofix</span>{% endif -%}
+  {%- if extra.settings %}<span class="rule-badge rule-badge-settings">{{ <icon name="adjustments-horizontal" size={12} /> }} Settings</span>{% endif -%}
+  {%- if extra.repository %}<span class="rule-badge rule-badge-repository">{{ <icon name="rectangle-stack" size={12} /> }} Repository</span>{% endif -%}
+  <span class="rule-badge">{{ <icon name="clock" size={12} /> }} Since {{ extra.since }}</span>
+</span>
+{%- endcomponent badges %}
+
+{#- The documentation's navigation, in the order the getting started page lists, with the pages of each section under
+it. current is the path of the page shown. -#}
+{% component navigation(current: string) -%}
+{%- set docs = get_section(path="docs/_index.md", metadata_only=true) -%}
+<ul class="docs-nav-list" id="docs-nav-list">
+  {%- for path in docs.extra.navigation %}
+  {%- set is_section = path is ending_with(pat="_index.md") %}
+  {%- set entry = get_section(path=path) if is_section else get_page(path=path) %}
+  <li>
+    {%- if is_section and path != "docs/_index.md" and entry.pages | length > 0 %}
+    <details class="docs-nav-group"{% if current is starting_with(pat=entry.path) %} open{% endif %}>
+      <summary><a href="{{ entry.permalink }}"{% if current == entry.path %} aria-current="page"{% endif %}>{{ entry.title }}</a>{{ <icon name="chevron-right" size={14} /> }}</summary>
+      <ul>
+        {%- for child in entry.pages %}
+        <li><a href="{{ child.permalink }}"{% if current == child.path %} aria-current="page"{% endif %}>{{ child.title }}</a></li>
+        {%- endfor %}
+      </ul>
+    </details>
+    {%- else %}
+    <a href="{{ entry.permalink }}"{% if current == entry.path %} aria-current="page"{% endif %}>{{ entry.title }}</a>
+    {%- endif %}
+  </li>
+  {%- endfor %}
+</ul>
+{%- endcomponent navigation %}
+
+{#- The headings of a page, two levels deep, as links. -#}
+{% component toc(toc: array) -%}
+{%- if toc | length > 0 %}
+<nav class="docs-toc" aria-labelledby="docs-toc-title">
+  <h2 id="docs-toc-title" class="docs-toc-title">On this page</h2>
+  <ul>
+    {%- for h2 in toc %}
+    <li><a href="#{{ h2.id }}">{{ h2.title }}</a>
+      {%- if h2.children | length > 0 %}
+      <ul>
+        {%- for h3 in h2.children %}
+        <li><a href="#{{ h3.id }}">{{ h3.title }}</a></li>
+        {%- endfor %}
+      </ul>
+      {%- endif %}
+    </li>
+    {%- endfor %}
+  </ul>
+</nav>
+{%- endif %}
+{%- endcomponent toc %}
+
+{#- The settings form, built from data/settings.toml: one group of settings after another, each a set of choices. id
+tells one form on the page from another. -#}
+{% component settings(id: string) -%}
+{%- set reader = load_data(path="data/settings.toml") -%}
+{%- set settings = reader.settings -%}
+<form class="settings" data-settings>
+  {%- for group in [s.group for s in settings] | unique %}
+  <section class="settings-group" aria-labelledby="{{ id }}-{{ group | lower }}">
+    <h2 class="settings-group-title" id="{{ id }}-{{ group | lower }}">{{ group }}</h2>
+    {%- for setting in [s for s in settings if s.group == group] %}
+    <fieldset class="setting">
+      <legend>{{ setting.label }}<span>{{ setting.hint }}</span></legend>
+      {%- for option in setting.options %}
+      <label><input type="radio" name="{{ setting.name }}" value="{{ option.value }}" data-setting="{{ setting.name }}"{% if option.value == setting.default %} checked{% endif %}> {{ option.label }}</label>
+      {%- endfor %}
+    </fieldset>
+    {%- endfor %}
+  </section>
+  {%- endfor %}
+</form>
+{%- endcomponent settings %}

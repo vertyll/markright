@@ -1,3 +1,5 @@
+//! The final-newline formatter: the file ends with exactly one newline.
+
 use super::blank_lines::content_end;
 use super::{About, Fix, Formatter, Settings, texts};
 use crate::FIRST_RELEASE;
@@ -16,16 +18,16 @@ impl Formatter for FinalNewline {
 		}
 	}
 
-	fn apply(&self, d: &Document, _: &Settings) -> Fix {
-		let lines = &d.lines;
+	fn apply(&self, document: &Document, _: &Settings) -> Fix {
+		let lines = &document.lines;
 		let end = content_end(lines);
 		if end == 0 || (end == lines.len() - 1 && lines[end].text.is_empty()) {
 			return Fix {
-				lines: texts(d),
+				lines: texts(document),
 				changed: Vec::new(),
 			};
 		}
-		let mut out = texts(d);
+		let mut out = texts(document);
 		out.truncate(end);
 		out.push(String::new());
 		let changed = if end == lines.len() { lines.len() } else { end + 1 };

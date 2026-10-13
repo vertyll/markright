@@ -1,7 +1,7 @@
-//! Checks one document the way `markright run` and `markright fmt` would, for the playground on the documentation site.
+//! Checks one document the way `markright check` and `markright fmt` would, for the playground on the documentation site.
 //! It runs the same formatters and linters as the command, in memory. Compiled to WebAssembly, it exports
-//! `check(markdown, configuration)` to the page, which returns an [`Outcome`] as an object, or throws why the document
-//! could not be checked.
+//! `check(markdown, configuration, syntax)` to the page, which returns an [`Outcome`] as an object, or throws why the
+//! document could not be checked.
 
 use std::collections::BTreeMap;
 
@@ -23,7 +23,7 @@ pub struct Issue {
 	pub message: String,
 }
 
-/// What the playground shows: the issues, the report `markright run` prints for them, and the document as
+/// What the playground shows: the issues, the report `markright check` prints for them, and the document as
 /// `markright fmt` leaves it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Outcome {
@@ -41,21 +41,30 @@ pub enum CheckError {
 	/// The configuration is not valid.
 	#[error("configuration: {0}")]
 	Configuration(#[from] ConfigError),
+	/// The syntax of the configuration is neither `yaml` nor `toml`.
+	#[error("configuration: no syntax {0:?}; use yaml or toml")]
+	Syntax(String),
 	/// The check failed.
 	#[error(transparent)]
 	Run(#[from] markright::Error),
 }
 
-/// Checks `markdown` with `configuration`, the content of a `.markright.yaml` file; an empty one means the defaults.
+/// Checks `markdown` with `configuration`, the content of a `.markright.yaml` file when `syntax` is `yaml` or of a
+/// `.markright.toml` file when it is `toml`; an empty one means the defaults.
 ///
 /// # Errors
 ///
-/// Returns why the document could not be checked: a configuration that is not valid.
-pub fn check(markdown: &str, configuration: &str) -> Result<Outcome, CheckError> {
+/// Returns why the document could not be checked: a configuration that is not valid, or an unknown syntax.
+pub fn check(markdown: &str, configuration: &str, syntax: &str) -> Result<Outcome, CheckError> {
+	let (file, syntax) = match syntax {
+		"yaml" => (config::YAML_FILE, config::Syntax::Yaml),
+		"toml" => (config::TOML_FILE, config::Syntax::Toml),
+		other => return Err(CheckError::Syntax(other.to_owned())),
+	};
 	let config = if configuration.trim().is_empty() {
 		Config::default()
 	} else {
-		Config::parse(configuration, config::YAML_FILE, config::Syntax::Yaml)?
+		Config::parse(configuration, file, syntax)?
 	};
 	let documents = BTreeMap::from([(DOCUMENT.to_owned(), markdown.to_owned())]);
 	let checked = runner::check_documents(&documents, &config, Mode::Lint)?;
@@ -64,10 +73,10 @@ pub fn check(markdown: &str, configuration: &str) -> Result<Outcome, CheckError>
 		issues: checked
 			.issues
 			.into_iter()
-			.map(|i| Issue {
-				line: i.line,
-				source: i.source,
-				message: i.message,
+			.map(|issue| Issue {
+				line: issue.line,
+				source: issue.source,
+				message: issue.message,
 			})
 			.collect(),
 		formatted: checked
@@ -83,14 +92,15 @@ pub fn check(markdown: &str, configuration: &str) -> Result<Outcome, CheckError>
 pub mod exports {
 	use wasm_bindgen::prelude::*;
 
-	/// Checks `markdown` with `configuration` and returns the outcome as an object.
+	/// Checks `markdown` with `configuration`, written in `syntax`, `yaml` or `toml`, and returns the outcome as an
+	/// object.
 	///
 	/// # Errors
 	///
 	/// Throws why the document could not be checked.
 	#[wasm_bindgen]
-	pub fn check(markdown: &str, configuration: &str) -> Result<JsValue, JsError> {
-		let outcome = super::check(markdown, configuration).map_err(|e| JsError::new(&e.to_string()))?;
+	pub fn check(markdown: &str, configuration: &str, syntax: &str) -> Result<JsValue, JsError> {
+		let outcome = super::check(markdown, configuration, syntax).map_err(|e| JsError::new(&e.to_string()))?;
 		serde_wasm_bindgen::to_value(&outcome).map_err(|e| JsError::new(&e.to_string()))
 	}
 }
@@ -100,7 +110,7 @@ mod tests {
 	use super::{CheckError, Issue, check};
 
 	fn checked(markdown: &str, configuration: &str) -> super::Outcome {
-		check(markdown, configuration).unwrap_or_else(|e| panic!("{e}"))
+		check(markdown, configuration, "yaml").unwrap_or_else(|e| panic!("{e}"))
 	}
 
 	#[test]
@@ -166,6 +176,7 @@ linters:
 				"Go -> here.
 ",
 				configuration,
+				"yaml",
 			)
 			.unwrap_err();
 			assert!(matches!(error, CheckError::Configuration(_)), "{error}");
@@ -174,5 +185,28 @@ linters:
 				"{error}"
 			);
 		}
+	}
+
+	#[test]
+	fn a_toml_configuration() {
+		let outcome = check(
+			"# Title\n\nGo -> here.\n",
+			"version = \"1\"\n[formatters]\ndisable = [\"arrows\"]\n",
+			"toml",
+		)
+		.unwrap_or_else(|e| panic!("{e}"));
+		assert!(outcome.issues.is_empty(), "{outcome:?}");
+		let error = check("x\n", "version = 2\n", "toml").unwrap_err();
+		assert!(
+			error.to_string().starts_with("configuration: .markright.toml: "),
+			"{error}"
+		);
+	}
+
+	#[test]
+	fn an_unknown_syntax() {
+		let error = check("x\n", "", "json").unwrap_err();
+		assert!(matches!(error, CheckError::Syntax(_)), "{error}");
+		assert_eq!(error.to_string(), "configuration: no syntax \"json\"; use yaml or toml");
 	}
 }

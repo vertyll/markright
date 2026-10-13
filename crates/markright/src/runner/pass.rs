@@ -1,6 +1,7 @@
 //! One pass over the documents: format every one, lint the result, and filter the issues through the exclusions.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use super::{Checked, Mode, parallel};
@@ -38,8 +39,8 @@ pub(crate) fn check(
 	let unused = config
 		.watched()
 		.into_iter()
-		.filter(|w| !pass.used.contains(&w.key))
-		.map(|w| w.warning)
+		.filter(|watched| !pass.used.contains(&watched.key))
+		.map(|watched| watched.warning)
 		.collect();
 	Ok(Checked {
 		issues,
@@ -66,7 +67,7 @@ struct Pass<'a> {
 /// What formatting one document gives: the document as the linters see it, its new content when a formatter changed
 /// it, and, in [`Mode::Lint`], what each formatter would change.
 struct Formatted {
-	doc: Document,
+	document: Document,
 	fixed: Option<String>,
 	issues: Vec<Issue>,
 }
@@ -77,7 +78,7 @@ impl Pass<'_> {
 	fn format_all(&mut self, files: &dyn Files, paths: &[String], stop: &AtomicBool) -> Result<Formatting, Error> {
 		let skip: Vec<bool> = paths
 			.iter()
-			.map(|p| self.record(self.config.formatter_excluded(p)))
+			.map(|path| self.record(self.config.formatter_excluded(path)))
 			.collect();
 		let jobs: Vec<(&String, bool)> = paths.iter().zip(skip).collect();
 		let results = parallel::map(&jobs, |&(path, skip)| {
@@ -100,7 +101,7 @@ impl Pass<'_> {
 			if let Some(content) = formatted.fixed {
 				formatting.fixed.insert(path.clone(), content);
 			}
-			formatting.documents.insert(path.clone(), formatted.doc);
+			formatting.documents.insert(path.clone(), formatted.document);
 		}
 		Ok(formatting)
 	}
@@ -113,48 +114,47 @@ impl Pass<'_> {
 			source,
 		};
 		let raw = files.read(path).map_err(read_error)?;
-		let text =
-			String::from_utf8(raw).map_err(|e| read_error(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
-		let doc = Document::parse(&text);
+		let text = String::from_utf8(raw).map_err(|e| read_error(io::Error::new(io::ErrorKind::InvalidData, e)))?;
+		let document = Document::parse(&text);
 		if skip {
 			return Ok(Formatted {
-				doc,
+				document,
 				fixed: None,
 				issues: Vec::new(),
 			});
 		}
-		let (formatted, issues) = self.apply_formatters(path, doc);
-		match formatted {
-			Changed::No(doc) => Ok(Formatted {
-				doc,
+		let (edit, issues) = self.apply_formatters(path, document);
+		Ok(match edit {
+			Edit::Unchanged(document) => Formatted {
+				document,
 				fixed: None,
 				issues,
-			}),
-			Changed::Yes(doc) => Ok(Formatted {
-				fixed: Some(doc.to_string()),
-				doc,
+			},
+			Edit::Changed(document) => Formatted {
+				fixed: Some(document.to_string()),
+				document,
 				issues,
-			}),
-		}
+			},
+		})
 	}
 
 	/// Runs every enabled formatter over the document, each on the result of the one before, and returns the document
 	/// they leave and, in [`Mode::Lint`], the lines each would change in the document as it is.
-	fn apply_formatters(&self, path: &str, original: Document) -> (Changed, Vec<Issue>) {
+	fn apply_formatters(&self, path: &str, original: Document) -> (Edit, Vec<Issue>) {
 		let mut current: Option<Document> = None;
 		let mut issues = Vec::new();
-		for f in formatters::ALL
+		for formatter in formatters::ALL
 			.iter()
-			.filter(|f| self.config.formatter_enabled(f.about().name))
+			.filter(|formatter| self.config.formatter_enabled(formatter.about().name))
 		{
-			let about = f.about();
+			let about = formatter.about();
 			let settings = &self.config.formatters.settings;
-			let fix = f.apply(current.as_ref().unwrap_or(&original), settings);
+			let fix = formatter.apply(current.as_ref().unwrap_or(&original), settings);
 			if self.mode == Mode::Lint {
-				// A run reports what each formatter would change in the file as it is, so the lines are the file's
-				// own; while no formatter has changed it, that is the fix just made.
+				// A run reports what each formatter would change in the file as it is. Until one has changed the
+				// document, the fix just made already says that.
 				let reported = match &current {
-					Some(_) => f.apply(&original, settings).changed,
+					Some(_) => formatter.apply(&original, settings).changed,
 					None => fix.changed.clone(),
 				};
 				issues.extend(
@@ -167,7 +167,7 @@ impl Pass<'_> {
 				current = Some(Document::parse(&fix.lines.join("\n")));
 			}
 		}
-		(current.map_or(Changed::No(original), Changed::Yes), issues)
+		(current.map_or(Edit::Unchanged(original), Edit::Changed), issues)
 	}
 
 	/// Runs the enabled linters. The document linters run over the documents at the same time, spread over the
@@ -176,9 +176,9 @@ impl Pass<'_> {
 	fn lint(&mut self, repo: &Repo<'_>, paths: &[String], stop: &AtomicBool) -> Result<(), Error> {
 		let excluded: HashMap<&str, bool> = paths
 			.iter()
-			.map(|p| (p.as_str(), self.record(self.config.linter_path_excluded(p))))
+			.map(|path| (path.as_str(), self.record(self.config.linter_path_excluded(path))))
 			.collect();
-		let is_excluded = |p: &str| excluded.get(p).copied().unwrap_or(false);
+		let is_excluded = |path: &str| excluded.get(path).copied().unwrap_or(false);
 		let config = self.config;
 		let context = Context {
 			repo,
@@ -188,7 +188,7 @@ impl Pass<'_> {
 		let enabled: Vec<Linter> = linters::ALL
 			.iter()
 			.copied()
-			.filter(|l| config.linter_enabled(l.about().name))
+			.filter(|linter| config.linter_enabled(linter.about().name))
 			.collect();
 		let found = parallel::map(paths, |path| {
 			if stop.load(Ordering::Relaxed) {
@@ -214,6 +214,7 @@ impl Pass<'_> {
 		Ok(())
 	}
 
+	/// Records what the rule `source` found, less what the linter exclusions drop.
 	fn add(&mut self, source: &'static str, found: Vec<Finding>) {
 		for finding in found {
 			if !self.record(self.config.linter_excluded(&finding.path, source, &finding.message)) {
@@ -232,11 +233,11 @@ impl Pass<'_> {
 /// Runs the document linters of `enabled` over the document at `path`, in order, and gives what each found, with a
 /// placeholder for each repository linter, up to the first that fails.
 fn lint_document(enabled: &[Linter], context: &Context<'_>, path: &str) -> Vec<Result<Vec<Finding>, Error>> {
-	let doc = &context.repo.docs[path];
+	let document = &context.repo.docs[path];
 	let mut found = Vec::with_capacity(enabled.len());
 	for linter in enabled {
 		let result = match linter.0 {
-			Kind::Document(linter) => linter.check(context, path, doc),
+			Kind::Document(linter) => linter.check(context, path, document),
 			Kind::Repository(_) => Ok(Vec::new()),
 		};
 		let failed = result.is_err();
@@ -248,8 +249,10 @@ fn lint_document(enabled: &[Linter], context: &Context<'_>, path: &str) -> Vec<R
 	found
 }
 
-/// A document as the formatters leave it: unchanged, or changed.
-enum Changed {
-	No(Document),
-	Yes(Document),
+/// A document as the formatters leave it.
+enum Edit {
+	/// No formatter changed it.
+	Unchanged(Document),
+	/// The formatters changed it into this.
+	Changed(Document),
 }

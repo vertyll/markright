@@ -1,6 +1,6 @@
 //! Where each line of the source starts, to turn the parser's byte offsets into lines and columns.
 
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
 
 /// The byte offset each line of a text starts at.
 pub(super) struct LineIndex {
@@ -9,6 +9,7 @@ pub(super) struct LineIndex {
 }
 
 impl LineIndex {
+	/// The index of `text`.
 	pub(super) fn new(text: &str) -> Self {
 		let starts = std::iter::once(0)
 			.chain(text.match_indices('\n').map(|(i, _)| i + 1))
@@ -45,7 +46,7 @@ impl LineIndex {
 	}
 
 	/// The 0-based lines `range` covers: from the line it starts on to the line of its last byte.
-	pub(super) fn lines(&self, range: &Range<usize>) -> std::ops::RangeInclusive<usize> {
+	pub(super) fn lines(&self, range: &Range<usize>) -> RangeInclusive<usize> {
 		self.line(range.start)..=self.line(range.end.saturating_sub(1).max(range.start))
 	}
 }

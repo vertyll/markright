@@ -1,3 +1,6 @@
+//! The SARIF 2.1.0 report. Its types are the parts of a SARIF log the report fills, named as the specification
+//! names them.
+
 use std::io::{self, Write};
 
 use serde::Serialize;
@@ -83,18 +86,20 @@ struct Region {
 
 /// Writes a SARIF 2.1.0 log with one run: every rule, and one result per issue.
 pub(super) fn write(w: &mut dyn Write, issues: &[Issue], rules: &[Rule]) -> io::Result<()> {
-	let rules = rules.iter().map(|r| RuleEntry {
-		id: r.name,
-		short_description: Message { text: &r.description },
+	let rules = rules.iter().map(|rule| RuleEntry {
+		id: rule.name,
+		short_description: Message {
+			text: &rule.description,
+		},
 	});
-	let results = issues.iter().map(|i| Finding {
-		rule_id: i.source,
+	let results = issues.iter().map(|issue| Finding {
+		rule_id: issue.source,
 		level: "error",
-		message: Message { text: &i.message },
+		message: Message { text: &issue.message },
 		locations: [Location {
 			physical_location: PhysicalLocation {
-				artifact_location: ArtifactLocation { uri: &i.path },
-				region: Region { start_line: i.line },
+				artifact_location: ArtifactLocation { uri: &issue.path },
+				region: Region { start_line: issue.line },
 			},
 		}],
 	});

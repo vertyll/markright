@@ -1,3 +1,5 @@
+//! The trailing-whitespace formatter: no spaces or tabs at the end of a line.
+
 use super::{About, Fix, Formatter, Settings, each_prose_line};
 use crate::FIRST_RELEASE;
 use crate::markdown::Document;
@@ -15,7 +17,7 @@ impl Formatter for TrailingWhitespace {
 		}
 	}
 
-	fn apply(&self, d: &Document, _: &Settings) -> Fix {
-		each_prose_line(d, |line| line.text.trim_end_matches([' ', '\t']).to_owned())
+	fn apply(&self, document: &Document, _: &Settings) -> Fix {
+		each_prose_line(document, |line| line.text.trim_end_matches([' ', '\t']).to_owned())
 	}
 }

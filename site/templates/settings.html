@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} – {{ config.title }}{% endblock %}
+{% block main %}
+<div class="plain">
+  <h1>{{ page.title }}</h1>
+  <p>How the site looks and behaves for you. The choices are kept in this browser and apply to every page. The button
+  at the top right of a code block or a table changes how it wraps, too.</p>
+  {{ <settings id="page" /> }}
+</div>
+{% endblock %}

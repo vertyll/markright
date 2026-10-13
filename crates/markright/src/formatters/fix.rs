@@ -13,19 +13,20 @@ pub struct Fix {
 }
 
 /// Rewrites every line that is not code with `rewrite`.
-pub(super) fn each_prose_line(d: &Document, rewrite: impl Fn(&Line) -> String) -> Fix {
+pub(super) fn each_prose_line(document: &Document, rewrite: impl Fn(&Line) -> String) -> Fix {
 	by_line(
-		&d.lines,
-		d.lines
+		&document.lines,
+		document
+			.lines
 			.iter()
 			.map(|line| if line.code { line.text.clone() } else { rewrite(line) })
 			.collect(),
 	)
 }
 
-/// The text of every line of `d`, to rewrite some of them.
-pub(super) fn texts(d: &Document) -> Vec<String> {
-	d.lines.iter().map(|line| line.text.clone()).collect()
+/// The text of every line of `document`, to rewrite some of them.
+pub(super) fn texts(document: &Document) -> Vec<String> {
+	document.lines.iter().map(|line| line.text.clone()).collect()
 }
 
 /// The fix that turns the lines `before` into `after`, which has as many lines.

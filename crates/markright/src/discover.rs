@@ -45,7 +45,7 @@ pub(crate) fn markdown(root: &Path, stop: &AtomicBool) -> Result<Vec<String>, Er
 	if stopped() {
 		return Err(Error::Stopped);
 	}
-	let mut out: Vec<String> = listed.into_iter().filter(|p| !in_excluded_dir(p)).collect();
+	let mut out: Vec<String> = listed.into_iter().filter(|path| !in_excluded_dir(path)).collect();
 	out.sort_unstable();
 	Ok(out)
 }
@@ -70,7 +70,7 @@ fn git_listed(root: &Path) -> Option<Vec<String>> {
 	Some(
 		listed
 			.split('\0')
-			.filter(|p| !p.is_empty() && root.join(p).exists())
+			.filter(|path| !path.is_empty() && root.join(path).exists())
 			.map(str::to_owned)
 			.collect(),
 	)

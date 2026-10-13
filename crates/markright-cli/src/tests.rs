@@ -46,12 +46,15 @@ fn run_reports_and_fmt_fixes() {
 	let root = tempfile::tempdir().unwrap();
 	fs::write(root.path().join("a.md"), "a -> b\n").unwrap();
 	let report = "a.md:1: ASCII arrow or missing space around an arrow (arrows)\nmarkright: 1 issue(s)\n";
-	assert_eq!(call(&["run", path(root.path())]), done(1, report, ""));
+	assert_eq!(call(&["check", path(root.path())]), done(1, report, ""));
 	assert_eq!(
 		call(&["fmt", path(root.path())]),
 		done(0, "formatted a.md\nmarkright: 1 file(s) formatted\n", "")
 	);
-	assert_eq!(call(&["run", path(root.path())]), done(0, "markright: 0 issues\n", ""));
+	assert_eq!(
+		call(&["check", path(root.path())]),
+		done(0, "markright: 0 issues\n", "")
+	);
 	assert_eq!(fs::read_to_string(root.path().join("a.md")).unwrap(), "a → b\n");
 }
 
@@ -83,7 +86,7 @@ fn usage_errors() {
 	for args in [
 		&[][..],
 		&["lint"],
-		&["run", "--nope"],
+		&["check", "--nope"],
 		&["config", "check"],
 		&["config"],
 	] {
@@ -100,7 +103,7 @@ fn a_wrong_configuration_stops_every_command() {
 	let root = tempfile::tempdir().unwrap();
 	fs::write(root.path().join(".markright.yaml"), "version: \"9\"\n").unwrap();
 	let error = "markright: .markright.yaml: version must be \"1\", got \"9\"\n";
-	for command in ["run", "fmt", "linters", "formatters"] {
+	for command in ["check", "fmt", "linters", "formatters"] {
 		assert_eq!(call(&[command, path(root.path())]), done(2, "", error), "{command}");
 	}
 }
@@ -133,13 +136,16 @@ fn a_toml_configuration() {
 	)
 	.unwrap();
 	fs::write(root.path().join("a.md"), "a -> b\n").unwrap();
-	assert_eq!(call(&["run", path(root.path())]), done(0, "markright: 0 issues\n", ""));
+	assert_eq!(
+		call(&["check", path(root.path())]),
+		done(0, "markright: 0 issues\n", "")
+	);
 	fs::write(root.path().join(".markright.yaml"), "version: \"1\"\n").unwrap();
 	let error = format!(
 		"markright: both .markright.yaml and .markright.toml exist in {}; keep one\n",
 		root.path().display()
 	);
-	assert_eq!(call(&["run", path(root.path())]), done(2, "", &error));
+	assert_eq!(call(&["check", path(root.path())]), done(2, "", &error));
 }
 
 #[test]
@@ -155,7 +161,7 @@ fn output_formats_and_unused_warnings() {
 	fs::write(root.path().join("a.md"), "[x](gone.md)\n").unwrap();
 	let out = "a.md:1: broken link: gone.md (links)\nmarkright: 1 issue(s)\n";
 	let err = "markright: warning: linters.exclusions.paths[0]: \"^nothing/\" matches no document\n";
-	assert_eq!(call(&["run", path(root.path())]), done(1, out, err));
+	assert_eq!(call(&["check", path(root.path())]), done(1, out, err));
 	let log: serde_json::Value = serde_json::from_str(&fs::read_to_string(&sarif).unwrap()).unwrap();
 	assert_eq!(log["runs"][0]["results"][0]["ruleId"], "links");
 }

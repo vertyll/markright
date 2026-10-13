@@ -19,6 +19,7 @@ struct Table {
 	rows: Vec<Vec<String>>,
 }
 
+/// Every generated table, with its rows as the registries and the schema make them now.
 fn tables(root: &Path) -> io::Result<Vec<Table>> {
 	let code = |s: &str| format!("`{s}`");
 	Ok(vec![
@@ -28,8 +29,8 @@ fn tables(root: &Path) -> io::Result<Vec<Table>> {
 			header: &["Formatter", "What it does"],
 			rows: formatters::ALL
 				.iter()
-				.map(|f| f.about())
-				.map(|a| vec![code(a.name), a.description.to_owned()])
+				.map(|formatter| formatter.about())
+				.map(|about| vec![code(about.name), about.description.to_owned()])
 				.collect(),
 		},
 		Table {
@@ -38,8 +39,8 @@ fn tables(root: &Path) -> io::Result<Vec<Table>> {
 			header: &["Linter", "What it enforces"],
 			rows: linters::ALL
 				.iter()
-				.map(|l| l.about())
-				.map(|a| vec![code(a.name), a.description.to_owned()])
+				.map(|linter| linter.about())
+				.map(|about| vec![code(about.name), about.description.to_owned()])
 				.collect(),
 		},
 		Table {
@@ -51,44 +52,31 @@ fn tables(root: &Path) -> io::Result<Vec<Table>> {
 	])
 }
 
-/// One row per setting: its key, what it means and its default, read from the schema, the formatters first, each
-/// section in the order of its registry.
+/// One row per setting: its key, what it means and its default, read from the schema.
 fn settings(root: &Path) -> io::Result<Vec<Vec<String>>> {
-	let raw = fs::read_to_string(root.join(crate::schema::PATH))?;
-	let schema: Value = serde_json::from_str(&raw).map_err(io::Error::other)?;
-	let resolve = |node: &'_ Value| -> Value {
-		let name = node["$ref"].as_str().and_then(|r| r.strip_prefix("#/$defs/"));
-		name.map_or_else(|| node.clone(), |name| schema["$defs"][name].clone())
-	};
-	let sections = [("formatters", formatters::names()), ("linters", linters::names())];
-	let mut rows = Vec::new();
-	for (section, names) in sections {
-		let rules = resolve(&resolve(&schema["properties"][section])["properties"]["settings"]);
-		for name in names {
-			let rule = resolve(&rules["properties"][name]);
-			let Some(keys) = rule["properties"].as_object() else {
-				continue;
-			};
-			for (key, property) in keys {
-				let meaning = property["description"].as_str().unwrap_or_default();
-				let meaning = lowercase_first(meaning.trim_end_matches('.'));
-				let default = default(&property["default"]);
-				rows.push(vec![format!("`{section}.settings.{name}.{key}`"), meaning, default]);
-			}
-		}
-	}
-	Ok(rows)
+	Ok(crate::schema::settings(root)?
+		.into_iter()
+		.map(|setting| {
+			vec![
+				format!("`{}.settings.{}.{}`", setting.section, setting.rule, setting.key),
+				lowercase_first(setting.description.trim_end_matches('.')),
+				default(&setting.default),
+			]
+		})
+		.collect())
 }
 
+/// `text` with its first letter in lower case, as the cells of the tables start.
 fn lowercase_first(text: &str) -> String {
 	let mut chars = text.chars();
 	chars
 		.next()
-		.map(|c| c.to_lowercase().chain(chars).collect())
+		.map(|first| first.to_lowercase().chain(chars).collect())
 		.unwrap_or_default()
 }
 
-fn default(value: &Value) -> String {
+/// A setting's default as a table cell shows it: each value in a code span.
+pub(crate) fn default(value: &Value) -> String {
 	match value {
 		Value::Array(items) => items.iter().map(default).collect::<Vec<_>>().join(", "),
 		Value::String(s) => format!("`{s}`"),
@@ -138,6 +126,7 @@ impl Table {
 	}
 }
 
+/// The cells as one row of a Markdown table.
 fn row(cells: &[String]) -> String {
 	format!("| {} |", cells.join(" | "))
 }

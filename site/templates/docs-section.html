@@ -1,0 +1,19 @@
+{% extends "docs.html" %}
+{% block after %}
+{%- if section.extra.next %}
+<section class="next" aria-labelledby="next-title">
+  <h2 id="next-title">Next</h2>
+  <ul class="tiles">
+    {%- for card in section.extra.next %}
+    <li><a class="tile tile-link" href="{{ get_url(path='@/' ~ card.page) }}"><span class="tile-title">{{ card.title }}</span><span class="tile-text">{{ card.subtitle }}</span>{{ <icon name="arrow-right" /> }}</a></li>
+    {%- endfor %}
+  </ul>
+</section>
+{%- elif section.pages | length > 0 and section.path != "/docs/" %}
+<ul class="tiles">
+  {%- for child in section.pages %}
+  <li><a class="tile tile-link" href="{{ child.permalink }}"><span class="tile-title">{{ child.title }}</span><span class="tile-text">{{ child.description }}</span>{{ <icon name="arrow-right" /> }}</a></li>
+  {%- endfor %}
+</ul>
+{%- endif %}
+{% endblock %}

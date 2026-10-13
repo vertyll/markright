@@ -1,5 +1,7 @@
 //! A regular expression the configuration file gives, compiled as the file is read.
 
+use std::borrow::Cow;
+
 use regex::Regex;
 use schemars::{JsonSchema, Schema, SchemaGenerator, json_schema};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -9,10 +11,12 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub struct Pattern(Regex);
 
 impl Pattern {
+	/// Whether the expression matches anywhere in `text`.
 	pub(super) fn matches(&self, text: &str) -> bool {
 		self.0.is_match(text)
 	}
 
+	/// The expression as the file writes it.
 	pub(super) fn as_str(&self) -> &str {
 		self.0.as_str()
 	}
@@ -49,7 +53,7 @@ impl PartialEq for Pattern {
 }
 
 impl JsonSchema for Pattern {
-	fn schema_name() -> std::borrow::Cow<'static, str> {
+	fn schema_name() -> Cow<'static, str> {
 		"Pattern".into()
 	}
 

@@ -1,3 +1,5 @@
+//! The readme-links linter: the README links the documents the configuration names.
+
 use super::{About, Context, Example, INDEX_DOCUMENT, RepositoryLinter};
 use crate::FIRST_RELEASE;
 use crate::issue::Finding;
@@ -19,16 +21,16 @@ impl RepositoryLinter for ReadmeLinks {
 		}
 	}
 
-	fn check(&self, c: &Context<'_>) -> Vec<Finding> {
-		let settings = &c.settings.readme_links;
-		if !c.repo.docs.contains_key(&settings.file) {
+	fn check(&self, context: &Context<'_>) -> Vec<Finding> {
+		let settings = &context.settings.readme_links;
+		if !context.repo.docs.contains_key(&settings.file) {
 			return Vec::new();
 		}
-		let linked = c.repo.linked(&settings.file);
+		let linked = context.repo.linked(&settings.file);
 		let missing = settings
 			.links
 			.iter()
-			.filter(|want| c.repo.docs.contains_key(*want) && !linked.contains(*want));
+			.filter(|want| context.repo.docs.contains_key(*want) && !linked.contains(*want));
 		missing
 			.map(|want| Finding::new(settings.file.clone(), 1, format!("does not link {want}")))
 			.collect()

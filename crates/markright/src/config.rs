@@ -42,7 +42,7 @@ pub struct Config {
 	/// The configuration format version.
 	#[schemars(schema_with = "schema::version")]
 	pub version: String,
-	/// Where markright run writes issues; text to stdout when no format is set.
+	/// Where markright check writes issues; text to stdout when no format is set.
 	#[serde(default)]
 	pub output: Output,
 	/// The linters that run, their settings and exclusions.
@@ -132,7 +132,7 @@ impl Config {
 		let found: Vec<PathBuf> = [YAML_FILE, TOML_FILE]
 			.iter()
 			.map(|name| root.join(name))
-			.filter(|p| p.is_file())
+			.filter(|path| path.is_file())
 			.collect();
 		match <[PathBuf; 2]>::try_from(found) {
 			Ok(_) => Err(ConfigError::Ambiguous { root: root.to_owned() }),
@@ -151,7 +151,7 @@ impl Config {
 			Ok(text) => {
 				let name = path
 					.file_name()
-					.map_or_else(|| path.display().to_string(), |n| n.display().to_string());
+					.map_or_else(|| path.display().to_string(), |name| name.display().to_string());
 				Self::parse(&text, &name, Syntax::of(path))
 			}
 			Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(Self::default()),
@@ -216,6 +216,7 @@ impl Config {
 	}
 }
 
+/// Checks that `enable` and `disable` of `section` name only rules of `names`, and no rule in both.
 fn check_selection(section: &str, enable: &[String], disable: &[String], names: &[&str]) -> Result<(), String> {
 	if let Some(name) = enable
 		.iter()
@@ -230,8 +231,9 @@ fn check_selection(section: &str, enable: &[String], disable: &[String], names: 
 	Ok(())
 }
 
+/// Whether the rule `name` runs: not disabled, and enabled or in the default set.
 fn enabled(default: Selection, enable: &[String], disable: &[String], name: &str) -> bool {
-	let named = |list: &[String]| list.iter().any(|n| n == name);
+	let named = |list: &[String]| list.iter().any(|listed| listed == name);
 	!named(disable) && (named(enable) || default == Selection::All)
 }
 

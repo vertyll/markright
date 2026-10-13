@@ -61,13 +61,15 @@ pub struct Table {
 	pub body: Vec<usize>,
 }
 
-/// A heading: its level, 1 to 6, and its line.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// A heading: its level, 1 to 6, its line and the anchor it defines.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Heading {
 	/// From 1 for `#` to 6 for `######`.
 	pub level: u8,
 	/// The line the heading starts on.
 	pub line: usize,
+	/// The anchor a `#fragment` names it by, numbered when an earlier heading has the same.
+	pub anchor: String,
 }
 
 /// A fenced code block: its info string, whose first word names the language, and the line it opens on.

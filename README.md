@@ -13,7 +13,8 @@
   blocks left open or without a language, skipped heading levels, images without alternative text, table rows with
   extra cells, long lines and documents missing from the index.
 
-Every rule, with an example, is in [Rules](docs/rules.md).
+Every rule, with an example, is in [Rules](docs/rules.md). The documentation is also a site, with a playground that
+runs markright on a document in the browser: <https://vertyll.github.io/markright/>.
 
 ## Install
 
@@ -22,7 +23,7 @@ run it:
 
 ```bash
 curl -fsSL https://github.com/vertyll/markright/releases/download/v0.1.0/markright-x86_64-unknown-linux-gnu.tar.gz | tar -xz
-./markright run
+./markright check
 ```
 
 or build a pinned version with Cargo:
@@ -35,10 +36,10 @@ cargo install --locked --git https://github.com/vertyll/markright --tag v0.1.0 m
 
 ```bash
 markright fmt
-markright run
+markright check
 ```
 
-`fmt` applies the formatters in place. `run` changes nothing and reports every issue, the lines `fmt` would change
+`fmt` applies the formatters in place. `check` changes nothing and reports every issue, the lines `fmt` would change
 included, one per line, and exits with `1` when there is any:
 
 ```text
@@ -80,7 +81,8 @@ default = "all"
 default = "all"
 ```
 
-The two say the same; a repository keeps one of them. The rest is in [Configuration](docs/configuration.md), and
+Both files above set the same. A repository has one of them: with both at its root, markright stops and asks to
+keep one. The rest is in [Configuration](docs/configuration.md), and
 every formatter and linter in [Rules](docs/rules.md).
 
 ## Documentation

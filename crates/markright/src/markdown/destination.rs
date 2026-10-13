@@ -6,7 +6,9 @@ use std::ops::Range;
 /// The bytes of the destination of the inline link whose text ends at `text_end`, inside any angle brackets.
 pub(super) fn inline(source: &str, text_end: usize) -> Option<Range<usize>> {
 	let close = text_end + source[text_end..].find(']')?;
-	(source.as_bytes().get(close + 1) == Some(&b'(')).then_some(())?;
+	if source.as_bytes().get(close + 1) != Some(&b'(') {
+		return None;
+	}
 	destination(source, close + 2)
 }
 
@@ -17,7 +19,9 @@ pub(super) fn definition(source: &str, span: &Range<usize>) -> Option<Range<usiz
 	while k < span.end && bytes[k] != b']' {
 		k += if bytes[k] == b'\\' { 2 } else { 1 };
 	}
-	(bytes.get(k + 1) == Some(&b':')).then_some(())?;
+	if bytes.get(k + 1) != Some(&b':') {
+		return None;
+	}
 	destination(source, k + 2)
 }
 

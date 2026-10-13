@@ -1,3 +1,5 @@
+//! The line-length linter: prose lines stay within the configured length.
+
 use std::sync::LazyLock;
 
 use regex::Regex;
@@ -24,10 +26,10 @@ impl DocumentLinter for LineLength {
 		}
 	}
 
-	fn check(&self, c: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
-		let limit = c.settings.line_length.max.get();
+	fn check(&self, context: &Context<'_>, path: &str, document: &Document) -> Result<Vec<Finding>, Error> {
+		let limit = context.settings.line_length.max.get();
 		let mut out = Vec::new();
-		for (i, line) in doc.lines.iter().enumerate() {
+		for (i, line) in document.lines.iter().enumerate() {
 			let n = line.text.chars().count();
 			if !line.code && n > limit && !unwrappable(&line.text) {
 				out.push(Finding::new(
@@ -43,6 +45,10 @@ impl DocumentLinter for LineLength {
 
 /// Whether a line cannot be wrapped: a table row, a long URL, HTML or an image.
 fn unwrappable(line: &str) -> bool {
-	let t = line.trim();
-	is_table_row(line) || LONG_URL.is_match(line) || t.starts_with('<') || t.starts_with("[![") || t.starts_with("![")
+	let trimmed = line.trim();
+	is_table_row(line)
+		|| LONG_URL.is_match(line)
+		|| trimmed.starts_with('<')
+		|| trimmed.starts_with("[![")
+		|| trimmed.starts_with("![")
 }

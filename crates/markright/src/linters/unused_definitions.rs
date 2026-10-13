@@ -1,3 +1,5 @@
+//! The unused-definitions linter: every reference definition is used.
+
 use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example};
 use crate::issue::Finding;
 use crate::markdown::Document;
@@ -19,11 +21,11 @@ impl DocumentLinter for UnusedDefinitions {
 		}
 	}
 
-	fn check(&self, _: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
-		let mut out: Vec<Finding> = doc
+	fn check(&self, _: &Context<'_>, path: &str, document: &Document) -> Result<Vec<Finding>, Error> {
+		let mut out: Vec<Finding> = document
 			.definitions
 			.iter()
-			.filter(|(label, _)| !doc.used_labels.contains(*label))
+			.filter(|(label, _)| !document.used_labels.contains(*label))
 			.map(|(label, def)| Finding::new(path, def.line, format!("unused definition: [{label}]")))
 			.collect();
 		out.sort_by_key(|issue| issue.line);

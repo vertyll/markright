@@ -1,0 +1,51 @@
+/* Code blocks and tables scroll sideways, or wrap when the reader asks for it, by setting or by their button. */
+
+.code-block.wrapped pre,
+.code-block.wrapped code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.content th,
+.content td {
+  white-space: nowrap;
+}
+
+.content table code {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.table-host {
+  position: relative;
+}
+
+.table-host.wrapped th,
+.table-host.wrapped td {
+  white-space: normal;
+}
+
+.table-host.wrapped table code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.table-buttons {
+  position: absolute;
+  top: -0.5rem;
+  right: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.table-host:hover .table-buttons,
+.table-buttons:focus-within {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .table-buttons {
+    opacity: 1;
+  }
+}

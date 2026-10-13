@@ -1,3 +1,5 @@
+//! The image-alt linter: every image has alternative text.
+
 use super::{About, Context, DocumentLinter, Example};
 use crate::issue::Finding;
 use crate::markdown::{Document, LinkKind};
@@ -18,8 +20,8 @@ impl DocumentLinter for ImageAlt {
 		}
 	}
 
-	fn check(&self, _: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
-		let bare = doc
+	fn check(&self, _: &Context<'_>, path: &str, document: &Document) -> Result<Vec<Finding>, Error> {
+		let bare = document
 			.links
 			.iter()
 			.filter(|link| matches!(&link.kind, LinkKind::Image { alt } if alt.is_empty()));

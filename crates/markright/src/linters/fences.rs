@@ -1,3 +1,5 @@
+//! The fences linter: every fenced code block is closed.
+
 use super::{About, Context, DocumentLinter, Example};
 use crate::issue::Finding;
 use crate::markdown::Document;
@@ -15,8 +17,8 @@ impl DocumentLinter for Fences {
 		}
 	}
 
-	fn check(&self, _: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
-		Ok(doc
+	fn check(&self, _: &Context<'_>, path: &str, document: &Document) -> Result<Vec<Finding>, Error> {
+		Ok(document
 			.unclosed_fence
 			.map(|line| Finding::new(path, line, "code block is never closed"))
 			.into_iter()

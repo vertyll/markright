@@ -1,12 +1,13 @@
-//! Where `markright run` writes issues.
+//! Where `markright check` writes issues.
 
+use std::borrow::Cow;
 use std::fmt;
 use std::path::PathBuf;
 
 use schemars::{JsonSchema, Schema, SchemaGenerator, json_schema};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-/// Where `markright run` writes issues.
+/// Where `markright check` writes issues.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Output {
@@ -53,7 +54,7 @@ impl Formats {
 			ReportFormat::Checkstyle => &self.checkstyle,
 			ReportFormat::Sarif => &self.sarif,
 		};
-		format.as_ref().map(|f| &f.path)
+		format.as_ref().map(|format| &format.path)
 	}
 
 	/// Whether no format is set, so text goes to the standard output.
@@ -63,7 +64,7 @@ impl Formats {
 	}
 }
 
-/// A format `markright run` can write issues in.
+/// A format `markright check` can write issues in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ReportFormat {
 	/// One issue per line, then a summary.
@@ -114,6 +115,7 @@ pub enum Destination {
 	File(PathBuf),
 }
 
+/// `stdout` and `stderr` name the streams, and anything else a file; an empty path is an error.
 impl<'de> Deserialize<'de> for Destination {
 	fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
 		match String::deserialize(deserializer)?.as_str() {
@@ -128,7 +130,7 @@ impl<'de> Deserialize<'de> for Destination {
 }
 
 impl JsonSchema for Destination {
-	fn schema_name() -> std::borrow::Cow<'static, str> {
+	fn schema_name() -> Cow<'static, str> {
 		"Destination".into()
 	}
 

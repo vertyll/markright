@@ -1,3 +1,5 @@
+//! The arrows formatter: ASCII arrows become Unicode ones, with a space on each side.
+
 use std::ops::Range;
 use std::sync::LazyLock;
 
@@ -26,8 +28,8 @@ impl Formatter for Arrows {
 		}
 	}
 
-	fn apply(&self, d: &Document, _: &Settings) -> Fix {
-		each_prose_line(d, |line| arrows_in_line(&line.text, &line.protected))
+	fn apply(&self, document: &Document, _: &Settings) -> Fix {
+		each_prose_line(document, |line| arrows_in_line(&line.text, &line.protected))
 	}
 }
 

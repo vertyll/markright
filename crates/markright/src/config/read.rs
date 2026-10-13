@@ -35,6 +35,7 @@ pub(super) fn parse<T: DeserializeOwned>(text: &str, file: &str, syntax: Syntax)
 	}
 }
 
+/// The YAML parser's options: messages without the snippet of the file, which an issue line has no room for.
 fn yaml_options() -> serde_saphyr::Options {
 	serde_saphyr::options! { with_snippet: false }
 }
@@ -44,7 +45,7 @@ fn yaml_error(file: &str, e: &serde_saphyr::Error) -> ConfigError {
 	let message = serde_saphyr::MessageFormatter::format_message(&serde_saphyr::UserMessageFormatter, e);
 	let line = e
 		.location()
-		.map_or(1, |l| usize::try_from(l.line()).unwrap_or(usize::MAX));
+		.map_or(1, |location| usize::try_from(location.line()).unwrap_or(usize::MAX));
 	ConfigError::Parse {
 		file: file.to_owned(),
 		line,

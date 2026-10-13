@@ -34,8 +34,81 @@ jobs:
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
 
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
       - name: Format, lint, test and check the Markdown
         run: bash scripts/check.sh
+
+  site:
+    name: Site
+    runs-on: ubuntu-24.04
+    env:
+      ZOLA_VERSION: 0.23.6
+      ZOLA_SHA256: 8f5132b3522412d04e395e0b25f6d68613ad272a873e54a2b3ebf664873024a4
+      WASM_BINDGEN_VERSION: 0.2.129
+      WASM_BINDGEN_SHA256: 82d12bb940e2d4e72e0d5605387fc1b8ca179044e012b620f0ce4e7440e8320e
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Rust
+        run: |
+          rustup toolchain install
+          rustup target add wasm32-unknown-unknown
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install Zola and wasm-bindgen
+        run: |
+          bin="$RUNNER_TEMP/bin"
+          mkdir -p "$bin"
+          cd "$RUNNER_TEMP"
+          zola="zola-v$ZOLA_VERSION-x86_64-unknown-linux-gnu.tar.gz"
+          curl -fsSLO "https://github.com/getzola/zola/releases/download/v$ZOLA_VERSION/$zola"
+          echo "$ZOLA_SHA256  $zola" | sha256sum -c -
+          tar -xzf "$zola" -C "$bin" zola
+          bindgen="wasm-bindgen-$WASM_BINDGEN_VERSION-x86_64-unknown-linux-musl"
+          curl -fsSLO "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/$WASM_BINDGEN_VERSION/$bindgen.tar.gz"
+          echo "$WASM_BINDGEN_SHA256  $bindgen.tar.gz" | sha256sum -c -
+          tar -xzf "$bindgen.tar.gz" --strip-components=1 -C "$bin" "$bindgen/wasm-bindgen"
+          echo "$bin" >> "$GITHUB_PATH"
+
+      - name: Build the site
+        run: bash scripts/site.sh build
+
+      - name: Check the site's links
+        run: cargo xtask site check site/public https://vertyll.github.io/markright/
+
+      - name: Upload the site
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/public
+
+  pages:
+    name: Pages
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [check, site]
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v5
 
   build:
     name: Build ${{ matrix.target }}
@@ -65,14 +138,19 @@ jobs:
       - name: Build the command
         run: cargo build --release --locked --package markright-cli --target ${{ matrix.target }}
 
-      - name: Pack it
+      - name: List the licenses of what it includes
+        shell: bash
+        run: cargo xtask licenses markright-cli ${{ matrix.target }} > THIRD-PARTY-LICENSES.txt
+
+      - name: Pack it, with its license and those of what it includes
         shell: bash
         run: |
+          cp LICENSE THIRD-PARTY-LICENSES.txt "target/${{ matrix.target }}/release/"
           cd "target/${{ matrix.target }}/release"
           if [ "${{ runner.os }}" = Windows ]; then
-            7z a "$GITHUB_WORKSPACE/markright-${{ matrix.target }}.zip" markright.exe
+            7z a "$GITHUB_WORKSPACE/markright-${{ matrix.target }}.zip" markright.exe LICENSE THIRD-PARTY-LICENSES.txt
           else
-            tar -czf "$GITHUB_WORKSPACE/markright-${{ matrix.target }}.tar.gz" markright
+            tar -czf "$GITHUB_WORKSPACE/markright-${{ matrix.target }}.tar.gz" markright LICENSE THIRD-PARTY-LICENSES.txt
           fi
 
       - name: Upload the archive

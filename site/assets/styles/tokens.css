@@ -1,0 +1,55 @@
+/*
+ * The colours, each for the light and the dark scheme. The root's colour scheme picks one: the system's, or the one the
+ * Theme setting chooses.
+ */
+:root {
+  color-scheme: light dark;
+  --mr-bg: light-dark(#fff, #111113);
+  --mr-text: light-dark(#27272a, #d4d4d8);
+  --mr-strong: light-dark(#18181b, #fafafa);
+  --mr-muted: light-dark(#71717a, #a1a1aa);
+  --mr-border: light-dark(#e4e4e7, #2e2e33);
+  --mr-border-strong: light-dark(#d4d4d8, #3f3f46);
+  --mr-surface: light-dark(#fff, #18181b);
+  --mr-surface-raised: light-dark(#f4f4f5, #1c1c1f);
+  --mr-header: light-dark(rgb(255 255 255 / 88%), rgb(17 17 19 / 88%));
+  --mr-accent: light-dark(#2563eb, #3b82f6);
+  --mr-accent-soft: light-dark(#eff4ff, #172036);
+  --mr-on-accent: #fff;
+  --mr-link: light-dark(#2563eb, #60a5fa);
+  --mr-badge: light-dark(#3f3f46, #d4d4d8);
+  --mr-new-bg: light-dark(#fef3c7, #451a03);
+  --mr-new: light-dark(#92400e, #fcd34d);
+  --mr-autofix-bg: light-dark(#dcfce7, #052e16);
+  --mr-autofix: light-dark(#166534, #86efac);
+  --mr-settings-bg: light-dark(#dbeafe, #172554);
+  --mr-settings: light-dark(#1e40af, #93c5fd);
+  --mr-repository-bg: light-dark(#ede9fe, #2e1065);
+  --mr-repository: light-dark(#5b21b6, #c4b5fd);
+  --mr-note: light-dark(#2563eb, #60a5fa);
+  --mr-tip: light-dark(#16a34a, #4ade80);
+  --mr-important: light-dark(#7c3aed, #a78bfa);
+  --mr-warning: light-dark(#b45309, #fbbf24);
+  --mr-caution: light-dark(#dc2626, #f87171);
+  --mr-error: light-dark(#b91c1c, #fca5a5);
+  --mr-shadow: 0 12px 32px light-dark(rgb(15 23 20 / 12%), rgb(0 0 0 / 55%));
+  --mr-card-glow: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 4%));
+  --mr-card-shadow: 0 2px 3px light-dark(rgb(0 0 0 / 4%), rgb(0 0 0 / 25%));
+  --mr-border-hover: light-dark(#a1a1aa, #71717a);
+  --mr-nav-hover: light-dark(#ebebed, #232327);
+  --mr-nav-active: light-dark(#e4e4e7, #2a2a2e);
+  --mr-scrollbar: light-dark(#a1a1aa, #71717a);
+  --mr-mono: ui-monospace, sfmono-regular, menlo, consolas, monospace;
+  --mr-sans: system-ui, -apple-system, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
+  --mr-header-height: 3.5rem;
+  --mr-footer-height: 2.75rem;
+  --mr-radius: 6px;
+}
+
+:root[data-markright-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-markright-theme="dark"] {
+  color-scheme: dark;
+}

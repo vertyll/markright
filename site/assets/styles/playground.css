@@ -1,0 +1,270 @@
+/* The playground: the document and its configuration on one side, what markright makes of them on the other. */
+
+.playground {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .playground {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.playground-input,
+.playground-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.playground-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.playground-wrap {
+  display: inline-flex;
+  padding: 0.3rem;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius);
+  color: var(--mr-muted);
+  cursor: pointer;
+}
+
+.playground-wrap:hover,
+.playground-wrap:focus-visible {
+  color: var(--mr-strong);
+}
+
+.playground-wrap[aria-pressed="true"] {
+  border-color: var(--mr-accent);
+  color: var(--mr-link);
+}
+
+.playground-label,
+.playground-config summary {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  font-family: var(--mr-mono);
+  font-size: 0.85rem;
+  color: var(--mr-muted);
+}
+
+.playground-config summary {
+  cursor: pointer;
+}
+
+.playground-editor,
+.playground-formatted,
+.playground-issues {
+  width: 100%;
+  min-height: 26rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius);
+  background: var(--mr-surface-raised);
+  color: inherit;
+  font-family: var(--mr-mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  tab-size: 2;
+}
+
+/* The editor grows with its text up to a height that fits the screen, then scrolls; the results follow its height. */
+.playground-editor {
+  max-height: min(70vh, 40rem);
+  overflow: auto;
+  resize: none;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.playground-editor:focus-visible {
+  outline: 2px solid var(--mr-accent);
+  outline-offset: 1px;
+}
+
+.playground-editor-config {
+  min-height: 8rem;
+  max-height: 16rem;
+  margin-top: 0.5rem;
+}
+
+.playground-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.playground-tabs button {
+  padding: 0.2rem 0.75rem;
+  border-radius: var(--mr-radius);
+  font-family: var(--mr-mono);
+  font-size: 0.85rem;
+  color: var(--mr-muted);
+  cursor: pointer;
+}
+
+.playground-tabs button[aria-selected="true"] {
+  background: var(--mr-surface-raised);
+  color: var(--mr-strong);
+}
+
+/* The results take the height of the row, which the editor sets, and scroll inside it when they are longer. */
+.playground-panel {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+}
+
+.playground-panel[hidden] {
+  display: none;
+}
+
+.playground-issues,
+.playground-formatted {
+  flex: 1 1 0;
+  overflow: auto;
+  contain: size;
+}
+
+/* One issue per line, as markright check prints it: line number, message and rule, scrolling sideways when long. */
+.playground-issues {
+  --playground-line-width: 2.5rem;
+  list-style: none;
+}
+
+.playground-issues button {
+  display: grid;
+  grid-template-columns: var(--playground-line-width) max-content max-content;
+  gap: 0 0.75rem;
+  width: max-content;
+  min-width: 100%;
+  white-space: nowrap;
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--mr-radius);
+  text-align: left;
+  cursor: pointer;
+}
+
+.playground-issues button:hover,
+.playground-issues button:focus-visible {
+  background: var(--mr-surface);
+}
+
+.playground-issue-line {
+  color: var(--mr-muted);
+}
+
+.playground-issue-source {
+  color: var(--mr-link);
+}
+
+.playground-status {
+  font-size: 0.85rem;
+  color: var(--mr-muted);
+}
+
+.playground-status[data-state="error"] {
+  color: var(--mr-error);
+}
+
+.playground-apply {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  align-self: flex-start;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--mr-border-strong);
+  border-radius: var(--mr-radius);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.playground-apply:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 639px) {
+  .playground-issues {
+    --playground-line-width: 2rem;
+    padding-inline: 0.5rem;
+  }
+}
+
+.playground-syntax {
+  display: inline-flex;
+  gap: 1rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.85rem;
+}
+
+.playground-syntax label {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.playground-syntax input {
+  accent-color: var(--mr-accent);
+}
+
+.playground-note {
+  margin-top: 2rem;
+  color: var(--mr-muted);
+  font-size: 0.85rem;
+}
+
+/*
+ * Long lines scroll sideways in the editors, the issues and the formatted document, and wrap when the Code blocks
+ * setting says so.
+ */
+html[data-markright-code="wrap"] .playground-editor,
+html[data-markright-code="wrap"] .playground-formatted {
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+html[data-markright-code="wrap"] .playground-issues {
+  overflow-x: hidden;
+}
+
+html[data-markright-code="wrap"] .playground-issues button {
+  grid-template-columns: var(--playground-line-width) minmax(0, 1fr);
+  width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+html[data-markright-code="wrap"] .playground-issue-source {
+  grid-column: 2;
+  font-size: 0.75rem;
+}
+
+/* In one column nothing beside the results sets their height, so they keep their own instead of shrinking to none. */
+@media (max-width: 1023px) {
+  .playground-panel {
+    flex: none;
+  }
+
+  .playground-issues,
+  .playground-formatted {
+    flex: none;
+    min-height: 12rem;
+    max-height: 26rem;
+    contain: none;
+  }
+}

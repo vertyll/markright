@@ -11,7 +11,7 @@ repositories.
 
 | Command                   | What it does                                                                                                | Exit code          |
 |---------------------------|-------------------------------------------------------------------------------------------------------------|--------------------|
-| `markright run`           | reports every linter's issues and every line a formatter would change, in the configured formats; no writes | `1` when any issue |
+| `markright check`         | reports every linter's issues and every line a formatter would change, in the configured formats; no writes | `1` when any issue |
 | `markright fmt`           | applies the formatters in place and lists the files it changed                                              | `0`                |
 | `markright linters`       | lists the linters and whether the configuration enables each                                                | `0`                |
 | `markright formatters`    | lists the formatters and whether the configuration enables each                                             | `0`                |
@@ -39,7 +39,7 @@ configuration or repository that cannot be read, or a run interrupted with Ctrl+
 <!-- /markright:formatters -->
 
 They run in that order, on prose only: code blocks and [protected spans](mechanisms/protected-spans.md) stay as
-written. `blank-lines` and `final-newline` remove or add lines, so they run last; `run` reports what each formatter
+written. `blank-lines` and `final-newline` remove or add lines, so they run last; `check` reports what each formatter
 would change against the file as it is, so every line number points into the file.
 
 - `arrows` turns any run of dashes ending in `>` or starting with `<` into one arrow, so `-->` becomes `→` as well.

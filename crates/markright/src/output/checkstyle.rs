@@ -1,3 +1,5 @@
+//! The Checkstyle report, an XML file that CI servers and code review tools read.
+
 use std::io::{self, Write};
 
 use quick_xml::Writer;

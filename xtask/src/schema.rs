@@ -6,6 +6,7 @@ use std::io;
 use std::path::Path;
 
 use markright::config::Config;
+use markright::{formatters, linters};
 use serde_json::Value;
 
 /// Where the schema lives in the repository.
@@ -40,6 +41,53 @@ pub(crate) fn write(root: &Path) -> io::Result<()> {
 		println!("wrote {PATH}");
 	}
 	Ok(())
+}
+
+/// A setting of a formatter or a linter, as the schema describes it.
+pub(crate) struct Setting {
+	/// `formatters` or `linters`.
+	pub(crate) section: &'static str,
+	/// The rule it belongs to.
+	pub(crate) rule: &'static str,
+	/// Its key under the rule.
+	pub(crate) key: String,
+	/// What it means, as a sentence.
+	pub(crate) description: String,
+	/// Its default.
+	pub(crate) default: Value,
+}
+
+/// Every setting the schema in the repository defines: the formatters' first, then the linters', each section in the
+/// order of its registry and each rule's in the order of the schema.
+pub(crate) fn settings(root: &Path) -> io::Result<Vec<Setting>> {
+	let raw = fs::read_to_string(root.join(PATH))?;
+	let schema: Value = serde_json::from_str(&raw).map_err(io::Error::other)?;
+	let resolve = |node: &'_ Value| -> Value {
+		let name = node["$ref"]
+			.as_str()
+			.and_then(|reference| reference.strip_prefix("#/$defs/"));
+		name.map_or_else(|| node.clone(), |name| schema["$defs"][name].clone())
+	};
+	let sections = [("formatters", formatters::names()), ("linters", linters::names())];
+	let mut settings = Vec::new();
+	for (section, names) in sections {
+		let rules = resolve(&resolve(&schema["properties"][section])["properties"]["settings"]);
+		for rule in names {
+			let Some(keys) = resolve(&rules["properties"][rule])["properties"].as_object().cloned() else {
+				continue;
+			};
+			for (key, property) in keys {
+				settings.push(Setting {
+					section,
+					rule,
+					key,
+					description: property["description"].as_str().unwrap_or_default().to_owned(),
+					default: property["default"].clone(),
+				});
+			}
+		}
+	}
+	Ok(settings)
 }
 
 /// Fails when the schema is not what the types make of it.

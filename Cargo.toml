@@ -15,6 +15,7 @@ markright = { path = "crates/markright", version = "0.1.0", default-features = f
 cap-std = "4.0.3"
 clap = { version = "4.6.7", features = ["derive"] }
 ctrlc = "3.5.2"
+merman = { version = "0.9.0", default-features = false, features = ["diagram-flowchart", "svg"] }
 percent-encoding = "2.3.2"
 proptest = "1.12.0"
 pulldown-cmark = { version = "0.13.4", default-features = false }
@@ -40,7 +41,7 @@ unreachable_pub = "warn"
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
-# Modules follow the style of The Rust Book: `foo.rs` next to the directory `foo/`, never `foo/mod.rs`.
+# A module with submodules lives in `foo.rs` next to the directory `foo/`, never in `foo/mod.rs`.
 mod_module_files = "warn"
 
 [profile.release]

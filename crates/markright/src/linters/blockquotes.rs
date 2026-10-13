@@ -1,3 +1,5 @@
+//! The blockquotes linter: every line of a blockquote starts with `>`.
+
 use super::{About, Context, DocumentLinter, Example};
 use crate::issue::Finding;
 use crate::markdown::Document;
@@ -18,8 +20,8 @@ impl DocumentLinter for Blockquotes {
 		}
 	}
 
-	fn check(&self, _: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
-		Ok(doc
+	fn check(&self, _: &Context<'_>, path: &str, document: &Document) -> Result<Vec<Finding>, Error> {
+		Ok(document
 			.lazy_lines
 			.iter()
 			.map(|&line| Finding::new(path, line, "blockquote continues on a line without >"))

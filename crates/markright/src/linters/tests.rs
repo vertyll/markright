@@ -73,6 +73,12 @@ fn registry() {
 		let release = parts.len() == 3 && parts.iter().all(|p| p.parse::<u32>().is_ok());
 		assert!(release, "{}: since {}", about.name, about.since);
 	}
+	let repository: Vec<&str> = ALL
+		.iter()
+		.filter(|l| l.is_repository())
+		.map(|l| l.about().name)
+		.collect();
+	assert_eq!(repository, ["index", "readme-links"]);
 }
 
 #[test]

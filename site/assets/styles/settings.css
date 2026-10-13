@@ -1,0 +1,114 @@
+/* The settings: a panel under the header's button, and the same form on the settings page. */
+
+.settings-panel {
+  position: fixed;
+  inset: calc(var(--mr-header-height) + 0.5rem) 1rem auto auto;
+  z-index: 30;
+  width: min(22rem, calc(100% - 2rem));
+  max-height: calc(100vh - var(--mr-header-height) - 1.5rem);
+  margin: 0;
+  padding: 1rem;
+  overflow-y: auto;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius);
+  background: var(--mr-surface);
+  color: inherit;
+  box-shadow: var(--mr-shadow);
+}
+
+.settings-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.settings-panel-title {
+  margin: 0;
+  color: var(--mr-strong);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.settings-panel-close {
+  display: inline-flex;
+  padding: 0.25rem;
+  border-radius: var(--mr-radius);
+  color: var(--mr-muted);
+  cursor: pointer;
+}
+
+.settings-panel-close:hover,
+.settings-panel-close:focus-visible {
+  background: var(--mr-surface-raised);
+  color: var(--mr-strong);
+}
+
+@media (max-width: 767px) {
+  .settings-panel {
+    inset-inline: 0;
+    margin-inline: auto;
+  }
+}
+
+.settings {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.settings-panel .settings {
+  margin-top: 0;
+}
+
+.settings-group {
+  display: grid;
+  gap: 1rem;
+}
+
+.settings-group-title {
+  margin: 0;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--mr-border);
+  color: var(--mr-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.setting {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.setting legend {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 0.35rem;
+  padding: 0;
+  color: var(--mr-strong);
+  font-weight: 600;
+}
+
+.setting legend span {
+  color: var(--mr-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.setting label {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.setting input {
+  accent-color: var(--mr-accent);
+}

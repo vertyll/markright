@@ -1,7 +1,8 @@
+//! The blank-lines formatter: at most one blank line in a row outside code.
+
 use super::{About, Fix, Formatter, Settings};
 use crate::FIRST_RELEASE;
-use crate::markdown::Document;
-use crate::markdown::Line;
+use crate::markdown::{Document, Line};
 
 pub(super) struct BlankLines;
 
@@ -16,15 +17,15 @@ impl Formatter for BlankLines {
 		}
 	}
 
-	fn apply(&self, d: &Document, _: &Settings) -> Fix {
+	fn apply(&self, document: &Document, _: &Settings) -> Fix {
 		let blank = |line: &Line| !line.code && line.text.trim().is_empty();
-		let end = content_end(&d.lines);
+		let end = content_end(&document.lines);
 		let mut fix = Fix {
-			lines: Vec::with_capacity(d.lines.len()),
+			lines: Vec::with_capacity(document.lines.len()),
 			changed: Vec::new(),
 		};
-		for (i, line) in d.lines.iter().enumerate() {
-			if i > 0 && i < end && blank(line) && blank(&d.lines[i - 1]) {
+		for (i, line) in document.lines.iter().enumerate() {
+			if i > 0 && i < end && blank(line) && blank(&document.lines[i - 1]) {
 				fix.changed.push(i + 1);
 			} else {
 				fix.lines.push(line.text.clone());

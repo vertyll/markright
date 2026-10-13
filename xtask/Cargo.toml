@@ -1,6 +1,6 @@
 [package]
 name = "xtask"
-description = "The project's own tasks: the tables of the documentation and the documentation site"
+description = "The project's own tasks: the schema, the tables of the documentation, the documentation site and the licenses of a build"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,8 +9,14 @@ publish = false
 
 [dependencies]
 markright = { workspace = true, features = ["parallel"] }
+merman.workspace = true
+regex.workspace = true
 schemars.workspace = true
+serde.workspace = true
 serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true

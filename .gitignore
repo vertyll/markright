@@ -16,3 +16,12 @@ lcov.info
 
 ### SonarQube ###
 .scannerwork/
+
+### Site ###
+site/content/
+site/public/
+site/static/js/
+site/static/wasm/
+site/static/markright.css
+site/assets/node_modules/
+site/assets/lcov.info

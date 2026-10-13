@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::io;
+use std::ops::Bound;
 use std::path::Path;
 
 /// Whether the file at `path` is a Markdown document: whether its name ends in `.md`.
@@ -41,7 +42,7 @@ impl Files for BTreeMap<String, String> {
 		}
 		let dir = format!("{path}/");
 		Ok(self
-			.range(dir.clone()..)
+			.range::<str, _>((Bound::Included(dir.as_str()), Bound::Unbounded))
 			.next()
 			.is_some_and(|(name, _)| name.starts_with(&dir)))
 	}

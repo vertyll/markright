@@ -320,6 +320,13 @@ fn headings_have_levels_and_lines() {
 }
 
 #[test]
+fn headings_have_their_anchors() {
+	let d = Document::parse("# Use `fmt`\n## Code\n## Code\n");
+	let got: Vec<&str> = d.headings.iter().map(|h| h.anchor.as_str()).collect();
+	assert_eq!(got, ["use-fmt", "code", "code-1"]);
+}
+
+#[test]
 fn display_gives_the_content_back() {
 	for content in ["", "a", "a\n", "a\r\nb\n\n", "# x\n```\ny"] {
 		assert_eq!(Document::parse(content).to_string(), content);

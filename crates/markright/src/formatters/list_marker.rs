@@ -1,3 +1,5 @@
+//! The list-marker formatter: the items of unordered lists take the configured marker.
+
 use super::{About, Fix, Formatter, Settings, by_line, texts};
 use crate::FIRST_RELEASE;
 use crate::markdown::Document;
@@ -15,18 +17,18 @@ impl Formatter for ListMarker {
 		}
 	}
 
-	fn apply(&self, d: &Document, settings: &Settings) -> Fix {
+	fn apply(&self, document: &Document, settings: &Settings) -> Fix {
 		let marker = settings.list_marker.marker;
-		let mut out = texts(d);
-		for bullet in &d.bullets {
+		let mut out = texts(document);
+		for bullet in &document.bullets {
 			let i = bullet.line - 1;
-			if bullet.marker != marker && !bullet.adjacent && !d.lines[i].code {
+			if bullet.marker != marker && !bullet.adjacent && !document.lines[i].code {
 				out[i].replace_range(
 					bullet.column..bullet.column + bullet.marker.as_str().len(),
 					marker.as_str(),
 				);
 			}
 		}
-		by_line(&d.lines, out)
+		by_line(&document.lines, out)
 	}
 }

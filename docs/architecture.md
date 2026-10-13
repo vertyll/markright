@@ -14,16 +14,16 @@ flowchart LR
 
     cfg --> list --> parse --> fmt
     fmt -- "markright fmt" --> write
-    fmt -- "markright run: what would change" --> report
-    fmt -- "markright run: parsed again" --> lint --> report
+    fmt -- "markright check: what would change" --> report
+    fmt -- "markright check: parsed again" --> lint --> report
 ```
 
 1. The configuration is read, or the defaults are used.
 2. The Markdown documents are listed: [Document discovery](mechanisms/document-discovery.md).
 3. Each document is parsed into lines, which lines are code, and the anchors its headings define.
 4. The enabled formatters run in the order `markright formatters` lists them, on every document the formatter
-   exclusions do not match. `fmt` writes a changed document back and stops there; `run` reports each changed line.
-5. Under `run`, the formatted text is parsed again, so the linters see what the file holds after `fmt`, and every
+   exclusions do not match. `fmt` writes a changed document back and stops there; `check` reports each changed line.
+5. Under `check`, the formatted text is parsed again, so the linters see what the file holds after `fmt`, and every
    document's anchors are known before any link is checked.
 6. The linters run per document, then `index` and `readme-links` over the whole set. Issues the linter exclusions
    match are dropped, and the rest are sorted by path and line.
@@ -32,12 +32,12 @@ flowchart LR
 
 ## Crates
 
-| Crate                   | Role                                                                                                     |
-|-------------------------|----------------------------------------------------------------------------------------------------------|
-| `crates/markright`      | the library: parsing, the formatters and linters, the configuration, a run, the reports                  |
-| `crates/markright-cli`  | the `markright` command: its subcommands and options, Ctrl+C, the exit codes                             |
-| `crates/markright-wasm` | one document checked in memory, compiled to WebAssembly for the playground                               |
-| `xtask`                 | the project's own tasks: the tables of Rules and Configuration, and the JSON schema of the configuration |
+| Crate                   | Role                                                                                                                                                                                              |
+|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `crates/markright`      | the library: parsing, the formatters and linters, the configuration, a run, the reports                                                                                                           |
+| `crates/markright-cli`  | the `markright` command: its subcommands and options, Ctrl+C, the exit codes                                                                                                                      |
+| `crates/markright-wasm` | one document checked in memory, compiled to WebAssembly for the playground                                                                                                                        |
+| `xtask`                 | the project's own tasks: the tables of Rules and Configuration, the JSON schema of the configuration, the pages of the documentation site and the check of its links, and the licenses of a build |
 
 The library has two features, both on by default. `disk` checks a repository on disk: it lists the documents through
 Git and writes what `fmt` changes. `parallel` spreads the documents over the cores. The playground turns both off:
@@ -115,6 +115,30 @@ nothing.
 A link to another document needs no look at the disk: the pass already knows every document and the directories that
 hold them. Any other target is looked up once per pass. Nothing is kept from one run to the next.
 
+## The documentation site
+
+The site in `site/` is built by Zola from pages that `cargo xtask site` writes into `site/content`, so nothing on it
+is written twice:
+
+- every document `CONTENTS.md` lists becomes a page at its place in the documentation, with its links pointed at the
+  pages they lead to, as `@/` paths that Zola checks when it builds, or at the file in the repository. Each heading
+  keeps the anchor markright gives it, which the documents' links already match, and a rule named in a table links
+  to the rule's page;
+- each `mermaid` code block becomes its diagram, drawn as SVG by the merman crate in a light and a dark theme, so
+  the page shows it without a script and in the reader's theme;
+- every formatter and linter gets a page from its registry entry: its example, run through markright with only that
+  rule on, its settings from the schema, and how to turn it off, in YAML and in TOML;
+- the templates in `site/templates` lay the pages out, the stylesheets in `site/assets/styles`, plain CSS, style
+  them, and `site/data/settings.toml` lists the reader's settings.
+
+The scripts in `site/assets/scripts`, TypeScript, add what a static page cannot do: the reader's settings, the search
+over the index Zola writes, the rule lists' filters, the wrap and copy buttons of code blocks and tables, and the
+playground. esbuild bundles the scripts into two files and the stylesheets into one, and Biome formats and lints
+both. The playground loads `crates/markright-wasm`, compiled to WebAssembly and bound to the page by
+wasm-bindgen, and runs the same `runner::check_documents` as everything else, so nothing leaves the browser.
+`cargo xtask site check` then follows every link of the built site, the templates' included, to a page and its
+anchor.
+
 ## Registries
 
 Every rule is a type of its own, such as `struct Links;`, that implements the trait of its kind. `formatters::ALL`
@@ -138,13 +162,13 @@ JSON schema of the file from these same types, so the schema cannot say anything
 
 ### Formatters
 
-A formatter implements `Formatter`. Besides its name and description, its `about()` gives the message `run` prints for
+A formatter implements `Formatter`. Besides its name and description, its `about()` gives the message `check` prints for
 a line it would change. Its `apply` takes the parsed document and the settings of the formatters, and returns a `Fix`:
 the new lines and the numbers of the lines it changed. The parser is the only judge of the document's structure: which
 lines are code, where its lists and tables are, which ranges to leave as written. No formatter reads that from the
 text on its own.
 
-A formatter may add or remove lines. `run` applies each formatter to the file as read, so the line numbers it reports
+A formatter may add or remove lines. `check` applies each formatter to the file as read, so the line numbers it reports
 are the file's own. `fmt` parses the document again after every change, so the next formatter sees the document as
 it is now.
 

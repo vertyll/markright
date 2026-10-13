@@ -1,0 +1,21 @@
+{
+  "name": "markright-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc && biome ci .",
+    "format": "biome check --write .",
+    "test": "node --test",
+    "build": "npm run build:scripts && npm run build:early && npm run build:styles",
+    "build:scripts": "esbuild scripts/main.ts --bundle --format=esm --minify --target=es2022 --outfile=../static/js/markright.js",
+    "build:early": "esbuild scripts/early.ts --bundle --format=iife --minify --target=es2022 --outfile=../static/js/early.js",
+    "build:styles": "esbuild styles/markright.css --bundle --minify --target=chrome123,firefox120,safari17.5 --outfile=../static/markright.css",
+    "watch": "npm run build:early && (npm run build:scripts -- --watch=forever & npm run build:styles -- --watch=forever & wait)"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "24.19.0",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
+}

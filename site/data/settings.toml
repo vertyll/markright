@@ -1,0 +1,81 @@
+# The settings a reader can change, in the order the settings form shows them. Each one is kept in the browser under
+# markright-<name> and set on the page as the attribute data-markright-<name>, which the stylesheets and scripts follow.
+
+[[settings]]
+name = "theme"
+group = "Appearance"
+label = "Theme"
+hint = "Colours of every page"
+default = "system"
+options = [
+  { value = "system", label = "As the system" },
+  { value = "light", label = "Light" },
+  { value = "dark", label = "Dark" },
+]
+
+[[settings]]
+name = "code"
+group = "Reading"
+label = "Code blocks"
+hint = "Lines longer than the block"
+default = "scroll"
+options = [
+  { value = "scroll", label = "Scroll" },
+  { value = "wrap", label = "Wrap" },
+]
+
+[[settings]]
+name = "table"
+group = "Reading"
+label = "Tables"
+hint = "Cells wider than the page"
+default = "scroll"
+options = [
+  { value = "scroll", label = "Scroll" },
+  { value = "wrap", label = "Wrap" },
+]
+
+[[settings]]
+name = "text"
+group = "Accessibility"
+label = "Text size"
+hint = "Every page, in proportion"
+default = "normal"
+options = [
+  { value = "normal", label = "Default" },
+  { value = "large", label = "Large" },
+  { value = "larger", label = "Larger" },
+]
+
+[[settings]]
+name = "links"
+group = "Accessibility"
+label = "Links"
+hint = "Links inside the text"
+default = "plain"
+options = [
+  { value = "plain", label = "Colour" },
+  { value = "underline", label = "Underlined" },
+]
+
+[[settings]]
+name = "motion"
+group = "Accessibility"
+label = "Motion"
+hint = "Animations and smooth scrolling"
+default = "system"
+options = [
+  { value = "system", label = "As the system" },
+  { value = "reduce", label = "Reduced" },
+]
+
+[[settings]]
+name = "scrollbars"
+group = "Accessibility"
+label = "Scrollbars"
+hint = "Code blocks, tables and other scrolling areas"
+default = "auto"
+options = [
+  { value = "auto", label = "When scrolling" },
+  { value = "always", label = "Always visible" },
+]

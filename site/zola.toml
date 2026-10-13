@@ -1,0 +1,41 @@
+# The documentation site. `cargo xtask site` writes content/ from the repository's documents and the rule registries;
+# scripts/site.sh builds the scripts, the styles and the playground into static/, then runs Zola.
+base_url = "https://vertyll.github.io/markright"
+title = "markright"
+description = "Formatters and linters for the Markdown of a repository, with one command and one configuration file."
+default_language = "en"
+minify_html = true
+build_search_index = true
+generate_sitemap = true
+generate_robots_txt = true
+
+[markdown]
+github_alerts = true
+insert_anchor_links = "right"
+external_links_target_blank = true
+external_links_no_referrer = true
+
+[markdown.highlighting]
+error_on_missing_language = true
+light_theme = "github-light"
+dark_theme = "github-dark"
+# The page sets the color scheme, so the reader's Theme setting reaches code blocks too.
+add_color_scheme = false
+
+[slugify]
+paths = "on"
+anchors = "on"
+
+[search]
+include_title = true
+include_description = true
+include_content = true
+truncate_content_length = 2000
+index_format = "fuse_json"
+
+[link_checker]
+internal_level = "error"
+external_level = "warn"
+
+[extra]
+repository = "https://github.com/vertyll/markright"

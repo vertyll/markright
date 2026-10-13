@@ -1,0 +1,59 @@
+{#- The home page: what markright does, a run of it, what it offers and every rule it has. -#}
+{% extends "base.html" %}
+{% block main_class %}home{% endblock %}
+{% block main %}
+{%- set formatters = get_section(path="docs/formatters/_index.md", metadata_only=false) %}
+{%- set linters = get_section(path="docs/linters/_index.md", metadata_only=false) %}
+<section class="intro">
+  <div class="intro-text">
+    <p class="eyebrow">Formatters and linters for Markdown</p>
+    <h1 class="intro-title">Keep the Markdown of a repository right.</h1>
+    <p class="intro-lead">{{ config.description }}</p>
+    <div class="intro-actions">
+      <a class="button button-primary" href="{{ get_url(path='@/docs/_index.md') }}">Get started {{ <icon name="arrow-right" /> }}</a>
+      <a class="button" href="{{ get_url(path='@/playground.md') }}">{{ <icon name="play" /> }} Playground</a>
+    </div>
+  </div>
+  <figure class="terminal">
+    <figcaption class="terminal-bar"><span class="terminal-dots" aria-hidden="true"></span>A run in a repository</figcaption>
+    <pre><span class="terminal-prompt">$</span> markright fmt
+formatted doc.md
+markright: 1 file(s) formatted
+<span class="terminal-prompt">$</span> markright check
+doc.md:5: broken anchor: #install <span class="terminal-rule">(anchors)</span>
+doc.md:9: broken link: setup.md <span class="terminal-rule">(links)</span>
+markright: 2 issue(s)</pre>
+  </figure>
+</section>
+<section class="pillars" aria-labelledby="pillars-title">
+  <h2 id="pillars-title" class="home-heading">What it does</h2>
+  <ol class="pillar-list">
+    {%- for pillar in [
+      "Fix, then check|markright fmt rewrites arrows, tables, list markers, blank lines and line ends; markright check reports everything else, unformatted lines included.|docs/rules.md",
+      "Links that resolve|Relative links, anchors, reference definitions and the index of the documents, checked against the files and headings that exist.|docs/linters/links/index.md",
+      "CommonMark first|Documents are parsed as CommonMark with the GFM extensions, so code, HTML and lists are read the way a renderer reads them.|docs/mechanisms/code-blocks.md",
+      "One configuration|.markright.yaml or .markright.toml chooses the rules, their settings and the paths each skips, with a JSON schema for editors.|docs/configuration.md",
+      "Reports for tools|Issues as text, Checkstyle or SARIF, in the file or stream each consumer reads.|docs/configuration.md",
+      "One binary|For Linux, macOS and Windows, in CI or on a laptop, with nothing else to install.|docs/_index.md",
+    ] %}
+    {%- set parts = pillar | split(pat="|") %}
+    <li class="pillar">
+      <a class="pillar-title" href="{{ get_url(path='@/' ~ parts[2]) }}">{{ parts[0] }}</a>
+      <p>{{ parts[1] }}</p>
+    </li>
+    {%- endfor %}
+  </ol>
+</section>
+<section class="catalog" aria-labelledby="catalog-title">
+  <h2 id="catalog-title" class="home-heading">Every rule</h2>
+  <div class="counts">
+    {%- for group in [formatters, linters] %}
+    <a class="tile count" href="{{ group.permalink }}">
+      <span class="count-number">{{ group.pages | length }}</span>
+      <span class="count-text"><span class="count-title">{{ group.title }}</span><span class="count-subtitle">{{ "Fixed by markright fmt" if group.title == "Formatters" else "Reported by markright check" }}</span></span>
+      {{ <icon name="arrow-right" size={18} /> }}
+    </a>
+    {%- endfor %}
+  </div>
+</section>
+{% endblock %}

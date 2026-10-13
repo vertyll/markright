@@ -144,7 +144,7 @@ impl PathFilter<'_> {
 			patterns
 				.iter()
 				.enumerate()
-				.filter(|(_, p)| p.matches(path))
+				.filter(|(_, pattern)| pattern.matches(path))
 				.map(|(index, _)| index)
 				.collect()
 		};
@@ -166,35 +166,26 @@ impl PathFilter<'_> {
 	/// Every pattern, with the warning printed when it matched nothing.
 	fn watched(&self) -> impl Iterator<Item = Watched> {
 		let section = self.section;
-		let warn = |key: ExclusionKey, p: &Pattern| Watched {
+		let warn = |key: ExclusionKey, pattern: &Pattern| Watched {
 			key,
-			warning: format!("{key}: {:?} matches no document", p.as_str()),
+			warning: format!("{key}: {:?} matches no document", pattern.as_str()),
 		};
 		let paths = self
 			.paths
 			.iter()
 			.enumerate()
-			.map(move |(index, p)| warn(ExclusionKey::Path { section, index }, p));
+			.map(move |(index, pattern)| warn(ExclusionKey::Path { section, index }, pattern));
 		let except = self
 			.except
 			.iter()
 			.enumerate()
-			.map(move |(index, p)| warn(ExclusionKey::PathExcept { section, index }, p));
+			.map(move |(index, pattern)| warn(ExclusionKey::PathExcept { section, index }, pattern));
 		paths.chain(except)
 	}
 }
 
-impl LinterExclusions {
-	fn paths(&self) -> PathFilter<'_> {
-		PathFilter {
-			section: Section::Linters,
-			paths: &self.paths,
-			except: &self.paths_except,
-		}
-	}
-}
-
 impl FormatterExclusions {
+	/// The section's path patterns.
 	fn paths(&self) -> PathFilter<'_> {
 		PathFilter {
 			section: Section::Formatters,
@@ -205,6 +196,17 @@ impl FormatterExclusions {
 }
 
 impl LinterExclusions {
+	/// The section's path patterns.
+	fn paths(&self) -> PathFilter<'_> {
+		PathFilter {
+			section: Section::Linters,
+			paths: &self.paths,
+			except: &self.paths_except,
+		}
+	}
+
+	/// Checks the rules against `linters`, the names of every linter: each sets at least two fields, never both
+	/// paths, and names only linters that exist.
 	pub(super) fn check(&self, linters: &[&str]) -> Result<(), String> {
 		for (i, rule) in self.rules.iter().enumerate() {
 			let key = ExclusionKey::Rule(i);
@@ -216,7 +218,7 @@ impl LinterExclusions {
 				!rule.linters.is_empty(),
 				rule.text.is_some(),
 			];
-			if fields.into_iter().filter(|&f| f).count() < 2 {
+			if fields.into_iter().filter(|&set| set).count() < 2 {
 				return Err(format!(
 					"{key}: set at least two of path or path-except, linters and text"
 				));
@@ -230,11 +232,12 @@ impl LinterExclusions {
 }
 
 impl ExclusionRule {
+	/// Whether the issue `linter` found at `path`, with `message`, matches every field the rule sets.
 	fn matches(&self, path: &str, linter: &str, message: &str) -> bool {
-		self.path.as_ref().is_none_or(|p| p.matches(path))
-			&& self.path_except.as_ref().is_none_or(|p| !p.matches(path))
-			&& (self.linters.is_empty() || self.linters.iter().any(|l| l == linter))
-			&& self.text.as_ref().is_none_or(|p| p.matches(message))
+		self.path.as_ref().is_none_or(|pattern| pattern.matches(path))
+			&& self.path_except.as_ref().is_none_or(|pattern| !pattern.matches(path))
+			&& (self.linters.is_empty() || self.linters.iter().any(|name| name == linter))
+			&& self.text.as_ref().is_none_or(|pattern| pattern.matches(message))
 	}
 }
 

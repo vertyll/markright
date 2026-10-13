@@ -72,6 +72,12 @@ impl Linter {
 			Kind::Repository(linter) => linter.about(),
 		}
 	}
+
+	/// Whether the linter looks at the whole repository once, rather than at one document at a time.
+	#[must_use]
+	pub fn is_repository(self) -> bool {
+		matches!(self.0, Kind::Repository(_))
+	}
 }
 
 impl fmt::Debug for Linter {
@@ -95,6 +101,7 @@ pub struct Example {
 }
 
 impl Example {
+	/// An example of a document at `doc.md`, alone in its repository.
 	pub(super) const fn new(bad: &'static str, good: &'static str) -> Self {
 		Self {
 			bad,
@@ -104,10 +111,12 @@ impl Example {
 		}
 	}
 
+	/// The example with `files` beside its document.
 	pub(super) const fn with_files(self, files: &'static [(&'static str, &'static str)]) -> Self {
 		Self { files, ..self }
 	}
 
+	/// The example with its document at `path`.
 	pub(super) const fn at(self, path: &'static str) -> Self {
 		Self { path, ..self }
 	}

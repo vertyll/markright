@@ -1,0 +1,35 @@
+{#- A section of rules, the formatters or the linters: its introduction, then every rule, with search and filters. -#}
+{% extends "docs.html" %}
+{% block after %}
+{%- set linters = section.path is ending_with(pat="/linters/") %}
+<div class="rule-list" data-rule-list>
+  <div class="rule-list-controls">
+    <label class="rule-list-search">
+      {{ <icon name="magnifying-glass" /> }}
+      <input type="search" placeholder="Filter by name or description" aria-label="Filter by name or description" data-rule-search>
+    </label>
+    <fieldset class="rule-list-chips">
+      <legend class="visually-hidden">Filters</legend>
+      <button type="button" class="rule-chip" aria-pressed="false" data-rule-filter="new">{{ <icon name="sparkles" size={14} /> }} New</button>
+      <button type="button" class="rule-chip" aria-pressed="false" data-rule-filter="settings">{{ <icon name="adjustments-horizontal" size={14} /> }} Settings</button>
+      {%- if linters %}
+      <button type="button" class="rule-chip" aria-pressed="false" data-rule-filter="repository">{{ <icon name="rectangle-stack" size={14} /> }} Repository</button>
+      {%- endif %}
+      <button type="button" class="rule-chip rule-chip-reset" data-rule-reset>{{ <icon name="arrow-path" size={14} /> }} Reset</button>
+    </fieldset>
+  </div>
+  <p class="rule-list-count" aria-live="polite" data-rule-count>{{ section.pages | length }} of {{ section.pages | length }}</p>
+  <ul class="rule-list-items">
+    {%- for rule in section.pages %}
+    {%- set flags = [flag for flag in ["new", "settings", "repository"] if rule.extra[flag]] %}
+    <li class="rule-card" data-rule data-text="{{ rule.title | lower }} {{ rule.description | lower }}" data-flags="{{ flags | join(sep=' ') }}">
+      <div class="rule-card-head">
+        <a class="rule-card-name" href="{{ rule.permalink }}"><code>{{ rule.title }}</code></a>
+        {{ <badges extra={rule.extra} /> }}
+      </div>
+      <p class="rule-card-description">{{ rule.extra.summary | markdown(inline=true) | safe }}.</p>
+    </li>
+    {%- endfor %}
+  </ul>
+</div>
+{% endblock %}

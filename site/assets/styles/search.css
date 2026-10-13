@@ -1,0 +1,110 @@
+/* The search over every page, in a dialog under the header. */
+
+.search {
+  width: min(40rem, calc(100% - 2rem));
+  max-height: min(36rem, calc(100vh - 6rem));
+  margin: 4rem auto auto;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius);
+  background: var(--mr-surface);
+  color: inherit;
+  box-shadow: var(--mr-shadow);
+}
+
+.search[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.search::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+
+.search-head {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--mr-border);
+  color: var(--mr-muted);
+}
+
+.search-head input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--mr-strong);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.search-close {
+  display: inline-flex;
+  padding: 0.25rem;
+  border-radius: var(--mr-radius);
+  cursor: pointer;
+}
+
+.search-close:hover {
+  background: var(--mr-surface-raised);
+  color: var(--mr-strong);
+}
+
+.search-results {
+  flex: 1;
+  margin: 0;
+  padding: 0.5rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.search-results:empty {
+  display: none;
+}
+
+.search-results a {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--mr-radius);
+  color: inherit;
+}
+
+.search-results a:hover,
+.search-results a[aria-selected="true"] {
+  background: var(--mr-surface-raised);
+  text-decoration: none;
+}
+
+.search-result-title {
+  display: block;
+  color: var(--mr-strong);
+  font-weight: 600;
+}
+
+.search-result-excerpt {
+  display: block;
+  color: var(--mr-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.search-results mark {
+  background: none;
+  color: var(--mr-link);
+  font-weight: 600;
+}
+
+.search-status {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  color: var(--mr-muted);
+  font-size: 0.85rem;
+}
+
+.search-status:empty {
+  display: none;
+}

@@ -33,13 +33,13 @@ pub static ALL: &[&dyn Formatter] = &[
 /// The name of every formatter, in the order they run.
 #[must_use]
 pub fn names() -> Vec<&'static str> {
-	ALL.iter().map(|f| f.about().name).collect()
+	ALL.iter().map(|formatter| formatter.about().name).collect()
 }
 
 /// The formatter called `name`.
 #[must_use]
 pub fn find(name: &str) -> Option<&'static dyn Formatter> {
-	ALL.iter().copied().find(|f| f.about().name == name)
+	ALL.iter().copied().find(|formatter| formatter.about().name == name)
 }
 
 #[cfg(test)]

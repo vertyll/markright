@@ -1,0 +1,294 @@
+/* The text of the documentation, as the Markdown of the repository's documents renders. */
+
+.content {
+  color: var(--mr-text);
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  h2,
+  h3,
+  h4 {
+    position: relative;
+    color: var(--mr-strong);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  h2 {
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--mr-border);
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    margin: 2rem 0 0.75rem;
+    font-size: 1.2rem;
+  }
+
+  h4 {
+    margin: 1.5rem 0 0.5rem;
+    font-size: 1rem;
+  }
+
+  p,
+  ul,
+  ol,
+  blockquote,
+  table {
+    margin: 1rem 0;
+  }
+
+  ul,
+  ol {
+    padding-left: 1.5rem;
+  }
+
+  li + li {
+    margin-top: 0.25rem;
+  }
+
+  li > ul,
+  li > ol {
+    margin: 0.25rem 0;
+  }
+
+  strong {
+    color: var(--mr-strong);
+  }
+
+  hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid var(--mr-border);
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  :not(pre) > code {
+    padding: 0.15em 0.35em;
+    border-radius: var(--mr-radius);
+    background: var(--mr-surface-raised);
+    color: var(--mr-strong);
+    font-size: 0.875em;
+    overflow-wrap: anywhere;
+  }
+
+  a code {
+    color: inherit;
+  }
+
+  blockquote {
+    padding: 0.25rem 1rem;
+    border-left: 3px solid var(--mr-border-strong);
+    color: var(--mr-muted);
+  }
+
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.925rem;
+  }
+
+  th,
+  td {
+    padding: 0.45rem 0.85rem;
+    border: 1px solid var(--mr-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--mr-surface-raised);
+    color: var(--mr-strong);
+    font-weight: 600;
+  }
+}
+
+/* Every heading links to itself; the link shows when the heading is pointed at. */
+.heading-anchor {
+  margin-left: 0.4rem;
+  color: var(--mr-muted);
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+h2:hover .heading-anchor,
+h3:hover .heading-anchor,
+h4:hover .heading-anchor,
+.heading-anchor:focus-visible {
+  opacity: 1;
+  text-decoration: none;
+}
+
+/* Code blocks, coloured by Zola for the light and the dark scheme, with their buttons at the top right. */
+.code-block {
+  position: relative;
+  margin: 1rem 0;
+}
+
+.content pre,
+.code-block pre {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.content > pre {
+  margin: 1rem 0;
+}
+
+.giallo-l {
+  display: inline-block;
+  min-height: 1lh;
+  width: 100%;
+}
+
+.code-buttons {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.code-block:hover .code-buttons,
+.code-buttons:focus-within {
+  opacity: 1;
+}
+
+.code-button {
+  display: inline-flex;
+  padding: 0.375rem;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius);
+  background: var(--mr-surface-raised);
+  color: var(--mr-muted);
+  cursor: pointer;
+}
+
+.code-button:hover {
+  color: var(--mr-strong);
+}
+
+.code-button[hidden] {
+  display: none;
+}
+
+.code-button[aria-pressed="true"],
+.code-button[data-copied] {
+  color: var(--mr-link);
+}
+
+@media (hover: none) {
+  .code-buttons {
+    opacity: 1;
+  }
+}
+
+/* GitHub's alerts: a note, a tip, something important, a warning or a caution. */
+.content blockquote[class^="markdown-alert-"] {
+  --alert: var(--mr-note);
+
+  border-left-color: var(--alert);
+  color: var(--mr-text);
+}
+
+.content blockquote[class^="markdown-alert-"]::before {
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--alert);
+  font-weight: 600;
+}
+
+.content blockquote.markdown-alert-note {
+  --alert: var(--mr-note);
+}
+
+.content blockquote.markdown-alert-note::before {
+  content: "Note";
+}
+
+.content blockquote.markdown-alert-tip {
+  --alert: var(--mr-tip);
+}
+
+.content blockquote.markdown-alert-tip::before {
+  content: "Tip";
+}
+
+.content blockquote.markdown-alert-important {
+  --alert: var(--mr-important);
+}
+
+.content blockquote.markdown-alert-important::before {
+  content: "Important";
+}
+
+.content blockquote.markdown-alert-warning {
+  --alert: var(--mr-warning);
+}
+
+.content blockquote.markdown-alert-warning::before {
+  content: "Warning";
+}
+
+.content blockquote.markdown-alert-caution {
+  --alert: var(--mr-caution);
+}
+
+.content blockquote.markdown-alert-caution::before {
+  content: "Caution";
+}
+
+.rule-lead {
+  margin: -0.75rem 0 1.5rem;
+}
+
+/*
+ * A Mermaid diagram, drawn when the site is built in a light and a dark theme; the page shows the one of its own
+ * scheme, as the Theme setting or the system chooses it.
+ */
+.diagram {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.diagram-dark,
+:root[data-markright-theme="dark"] .diagram-light {
+  display: none;
+}
+
+:root[data-markright-theme="dark"] .diagram-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-markright-theme="light"]) .diagram-light {
+    display: none;
+  }
+
+  :root:not([data-markright-theme="light"]) .diagram-dark {
+    display: block;
+  }
+}

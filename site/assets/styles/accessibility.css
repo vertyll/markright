@@ -1,0 +1,66 @@
+/* What the Accessibility settings change. Each rule follows an attribute that early.ts puts on the root element. */
+
+html[data-markright-text="large"] {
+  font-size: 112.5%;
+}
+
+html[data-markright-text="larger"] {
+  font-size: 125%;
+}
+
+html[data-markright-links="underline"] .content a,
+html[data-markright-links="underline"] .lead a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+/* Reduced motion overrides every animation and transition, whatever rule sets it, so it is the one place for !important. */
+html[data-markright-motion="reduce"] *,
+html[data-markright-motion="reduce"] *::before,
+html[data-markright-motion="reduce"] *::after {
+  /* biome-ignore lint/complexity/noImportantStyles: it must win over every rule */
+  animation-duration: 0.01ms !important;
+  /* biome-ignore lint/complexity/noImportantStyles: it must win over every rule */
+  animation-iteration-count: 1 !important;
+  /* biome-ignore lint/complexity/noImportantStyles: it must win over every rule */
+  transition-duration: 0.01ms !important;
+  /* biome-ignore lint/complexity/noImportantStyles: it must win over every rule */
+  scroll-behavior: auto !important;
+}
+
+/*
+ * Scrollbars that stay visible, instead of the overlay ones that appear only while scrolling. The playground always
+ * has them; every other scrolling area when the setting asks for it.
+ */
+html[data-markright-scrollbars="always"] ::-webkit-scrollbar,
+.playground ::-webkit-scrollbar {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* A clear track: the bar runs the full length of its box, and a rounded box keeps its corners. */
+html[data-markright-scrollbars="always"] ::-webkit-scrollbar-track,
+.playground ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html[data-markright-scrollbars="always"] ::-webkit-scrollbar-thumb,
+.playground ::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: var(--mr-radius);
+  background: var(--mr-scrollbar) padding-box;
+}
+
+html[data-markright-scrollbars="always"] ::-webkit-scrollbar-corner,
+.playground ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  html[data-markright-scrollbars="always"] *,
+  .playground * {
+    scrollbar-width: auto;
+    scrollbar-color: var(--mr-scrollbar) transparent;
+  }
+}

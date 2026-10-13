@@ -1,3 +1,5 @@
+//! The table-columns linter: no table row has more cells than its header.
+
 use super::{About, Context, DocumentLinter, Example};
 use crate::issue::Finding;
 use crate::markdown::{Document, table_cells};
@@ -18,10 +20,10 @@ impl DocumentLinter for TableColumns {
 		}
 	}
 
-	fn check(&self, _: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
-		let cells = |line: usize| table_cells(&doc.lines[line - 1].text).len();
+	fn check(&self, _: &Context<'_>, path: &str, document: &Document) -> Result<Vec<Finding>, Error> {
+		let cells = |line: usize| table_cells(&document.lines[line - 1].text).len();
 		let mut out = Vec::new();
-		for table in &doc.tables {
+		for table in &document.tables {
 			let header = cells(table.header);
 			for &row in &table.body {
 				let n = cells(row);

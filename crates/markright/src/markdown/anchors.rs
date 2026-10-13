@@ -24,8 +24,8 @@ impl Anchors {
 		self.set
 	}
 
-	/// Adds the anchor of a heading whose text, without markup, is `text`.
-	pub(super) fn heading(&mut self, text: &str) {
+	/// Adds the anchor of a heading whose text, without markup, is `text`, and returns it.
+	pub(super) fn heading(&mut self, text: &str) -> String {
 		let slug = slugify(text);
 		let count = *self
 			.seen
@@ -33,7 +33,8 @@ impl Anchors {
 			.and_modify(|count| *count += 1)
 			.or_insert(0);
 		let anchor = if count == 0 { slug } else { format!("{slug}-{count}") };
-		self.set.insert(anchor);
+		self.set.insert(anchor.clone());
+		anchor
 	}
 
 	/// Adds the id or name of every HTML element in `html`.

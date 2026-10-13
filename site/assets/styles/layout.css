@@ -1,0 +1,483 @@
+/* The frame of every page: the header, the documentation's three columns and the footer. */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--mr-border);
+  background: var(--mr-header);
+  backdrop-filter: blur(12px);
+}
+
+.site-header-inner,
+.site-footer-inner {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+
+.site-header-inner {
+  height: var(--mr-header-height);
+}
+
+.site-title {
+  color: var(--mr-strong);
+  font-family: var(--mr-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* The main navigation sits on the right, by the tools. */
+.site-nav {
+  margin-left: auto;
+}
+
+.site-title:hover {
+  text-decoration: none;
+}
+
+.site-nav ul {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-nav a {
+  display: block;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--mr-radius);
+  color: var(--mr-muted);
+  font-size: 0.925rem;
+}
+
+.site-nav a:hover {
+  color: var(--mr-strong);
+  text-decoration: none;
+}
+
+.site-nav a[aria-current] {
+  color: var(--mr-strong);
+  font-weight: 500;
+}
+
+.site-tools {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.tool {
+  display: inline-flex;
+  padding: 0.45rem;
+  border-radius: var(--mr-radius);
+  color: var(--mr-muted);
+  cursor: pointer;
+}
+
+.tool:hover,
+.tool[aria-expanded="true"] {
+  background: var(--mr-surface-raised);
+  color: var(--mr-strong);
+  text-decoration: none;
+}
+
+.search-open {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 12rem;
+  margin: 0 0.5rem 0 1rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius);
+  background: var(--mr-surface-raised);
+  color: var(--mr-muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.search-open:hover {
+  border-color: var(--mr-border-strong);
+}
+
+.search-open kbd {
+  margin-left: auto;
+  padding: 0 0.4rem;
+  border: 1px solid var(--mr-border-strong);
+  border-radius: 0.3rem;
+  font-size: 0.75rem;
+}
+
+/* The theme button shows the theme in use: the system's until the reader picks one. */
+.theme-icon {
+  display: none;
+}
+
+:root:not([data-markright-theme="light"], [data-markright-theme="dark"]) .theme-icon-system,
+:root[data-markright-theme="light"] .theme-icon-light,
+:root[data-markright-theme="dark"] .theme-icon-dark {
+  display: inline-flex;
+}
+
+.menu-toggle {
+  display: none;
+}
+
+/*
+ * Below this width the main navigation folds under the menu button, once the scripts run to open it, and the search
+ * button keeps only its icon.
+ */
+@media (max-width: 767px) {
+  .site-header-inner {
+    padding: 0 1rem;
+  }
+
+  .js .menu-toggle {
+    display: inline-flex;
+  }
+
+  .js .site-nav {
+    position: absolute;
+    top: var(--mr-header-height);
+    right: 0;
+    left: 0;
+    display: none;
+    border-bottom: 1px solid var(--mr-border);
+    background: var(--mr-bg);
+  }
+
+  .js .site-nav.open {
+    display: block;
+  }
+
+  .js .site-nav ul {
+    flex-direction: column;
+    padding: 0.5rem 1rem 1rem;
+  }
+
+  .search-open {
+    width: auto;
+    margin: 0;
+    padding: 0.45rem;
+    border: 0;
+    background: none;
+  }
+
+  .search-open span,
+  .search-open kbd {
+    display: none;
+  }
+}
+
+/* Pages without the documentation's navigation: the home page, the settings and the playground. */
+.page,
+.home,
+.wide {
+  width: 100%;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.page {
+  max-width: 48rem;
+}
+
+.home {
+  max-width: 76rem;
+}
+
+.wide {
+  max-width: 90rem;
+}
+
+.lead {
+  max-width: 75ch;
+}
+
+h1 {
+  margin: 0 0 1.5rem;
+  color: var(--mr-strong);
+  font-size: 2.25rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * The documentation: its navigation along the left edge, the page in the middle and the page's headings along the
+ * right edge, as the window allows.
+ */
+.docs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  padding: 0 1.5rem;
+}
+
+.docs-article {
+  width: 100%;
+  max-width: 52rem;
+  min-width: 0;
+  margin: 0 auto;
+  /* The space under the text is the article's own, so the side panels reach down to the footer. */
+  padding: 2rem 0 4rem;
+}
+
+.docs-aside {
+  display: none;
+}
+
+.docs-nav {
+  padding-top: 1rem;
+}
+
+/* On narrow screens the navigation folds under a button, once the scripts run to open it. */
+.docs-nav-toggle {
+  display: none;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mr-border);
+  border-radius: var(--mr-radius);
+  color: var(--mr-strong);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.docs-nav-toggle .icon:last-child {
+  margin-left: auto;
+  transition: transform 0.15s;
+}
+
+.docs-nav-toggle[aria-expanded="true"] .icon:last-child {
+  transform: rotate(90deg);
+}
+
+@media (max-width: 1023px) {
+  .js .docs-nav-toggle {
+    display: flex;
+  }
+
+  .js .docs-nav:not(.open) .docs-nav-list {
+    display: none;
+  }
+}
+
+.docs-nav-list,
+.docs-nav-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.docs-nav-list {
+  padding-top: 0.75rem;
+  font-size: 0.925rem;
+}
+
+/* A row: a page, or a section with its own page and the button that folds its pages. */
+.docs-nav-list a,
+.docs-nav-group > summary {
+  display: block;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--mr-radius);
+  color: var(--mr-muted);
+}
+
+/* Rows never touch, so a lit row and the one under the pointer stay apart. */
+.docs-nav-list li + li,
+.docs-nav-list ul {
+  margin-top: 2px;
+}
+
+.docs-nav-list a:hover,
+.docs-nav-group > summary:hover {
+  background: var(--mr-nav-hover);
+  color: var(--mr-strong);
+  text-decoration: none;
+}
+
+/* The page shown: its whole row lit, the folding button of a section included. */
+.docs-nav-list a[aria-current="page"],
+.docs-nav-group > summary:has(> a[aria-current="page"]) {
+  background: var(--mr-nav-active);
+  color: var(--mr-strong);
+  font-weight: 500;
+}
+
+.docs-nav-list ul {
+  margin-bottom: 0.35rem;
+  margin-left: 0.75rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--mr-border);
+}
+
+.docs-nav-group > summary {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+
+.docs-nav-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A section's link fills its row, which carries the row's look. */
+.docs-nav-list .docs-nav-group > summary > a {
+  flex: 1;
+  padding: 0;
+  background: none;
+  color: inherit;
+}
+
+.docs-nav-group > summary .icon {
+  color: inherit;
+  transition: transform 0.15s;
+}
+
+.docs-nav-group[open] > summary .icon {
+  transform: rotate(90deg);
+}
+
+.docs-toc {
+  position: sticky;
+  top: calc(var(--mr-header-height) + 2rem);
+  max-height: calc(100vh - var(--mr-header-height) - var(--mr-footer-height) - 3rem);
+  overflow-y: auto;
+  font-size: 0.875rem;
+}
+
+.docs-toc-title {
+  margin: 0 0 0.5rem;
+  color: var(--mr-muted);
+  font-family: var(--mr-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.docs-toc ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.docs-toc ul ul {
+  padding-left: 0.85rem;
+}
+
+.docs-toc a {
+  display: block;
+  padding: 0.2rem 0;
+  color: var(--mr-muted);
+  line-height: 1.4;
+}
+
+.docs-toc a:hover,
+.docs-toc a[aria-current="true"] {
+  color: var(--mr-strong);
+  text-decoration: none;
+}
+
+@media (min-width: 1024px) {
+  .docs {
+    grid-template-columns: 16rem minmax(0, 1fr);
+    padding: 0;
+  }
+
+  .docs-nav {
+    position: sticky;
+    top: var(--mr-header-height);
+    align-self: start;
+    height: calc(100vh - var(--mr-header-height) - var(--mr-footer-height));
+    overflow-y: auto;
+    padding: 1.5rem 1rem 2rem;
+    border-right: 1px solid var(--mr-border);
+    background: var(--mr-surface-raised);
+  }
+
+  .docs-article {
+    padding-inline: 2.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .docs {
+    grid-template-columns: 16rem minmax(0, 1fr) 15rem;
+  }
+
+  .docs-aside {
+    display: block;
+    padding: 2rem 1.5rem 0;
+    border-left: 1px solid var(--mr-border);
+  }
+}
+
+@media (max-width: 767px) {
+  .docs,
+  .page,
+  .home,
+  .wide {
+    padding-inline: 1rem;
+  }
+
+  .site-header-inner,
+  .site-footer-inner {
+    padding-inline: 1rem;
+  }
+
+  h1 {
+    font-size: 1.875rem;
+  }
+}
+
+.next {
+  margin-top: 3rem;
+}
+
+.next h2 {
+  margin: 0;
+  color: var(--mr-strong);
+  font-size: 1.25rem;
+}
+
+/* The footer stays at the bottom of the window, over the page as it scrolls. */
+.site-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  border-top: 1px solid var(--mr-border);
+  background: var(--mr-header);
+  color: var(--mr-muted);
+  backdrop-filter: blur(12px);
+}
+
+.site-footer-inner {
+  justify-content: space-between;
+  height: var(--mr-footer-height);
+  font-family: var(--mr-mono);
+  font-size: 0.8rem;
+}
+
+.site-footer a {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  color: inherit;
+}
+
+.site-footer a:hover {
+  color: var(--mr-strong);
+  text-decoration: none;
+}
+
+.site-footer-links {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+}

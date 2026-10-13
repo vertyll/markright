@@ -1,6 +1,8 @@
 //! The project's own tasks, run with `cargo xtask <task>` from anywhere in the repository.
 
+mod licenses;
 mod schema;
+mod site;
 mod tables;
 
 use std::path::{Path, PathBuf};
@@ -13,6 +15,11 @@ Tasks:
   schema --check  fail when the schema is out of date
   tables          write the tables of docs/rules.md and docs/configuration.md from the registries and the schema
   tables --check  fail when those tables are out of date
+  site            write the pages of the documentation site into site/content
+  site check <dir> <base>
+                  fail when a link of the site built into <dir>, served at <base>, leads nowhere
+  licenses <package> <target>
+                  print the licenses of the crates <package> includes when built for <target>
 ";
 
 fn main() -> ExitCode {
@@ -23,6 +30,9 @@ fn main() -> ExitCode {
 		["schema", "--check"] => schema::check(&root()),
 		["tables"] => tables::write(&root()),
 		["tables", "--check"] => tables::check(&root()),
+		["site"] => site::generate(&root()),
+		["site", "check", public, base] => site::check(Path::new(public), base),
+		["licenses", package, target] => licenses::print(&root(), package, target),
 		_ => {
 			eprint!("{USAGE}");
 			return ExitCode::from(2);

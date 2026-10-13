@@ -1,5 +1,7 @@
 //! How many columns a terminal or an editor shows a string in, as aligning a table needs.
 
+use std::cmp::Ordering;
+
 use unicode_properties::{GeneralCategory, UnicodeGeneralCategory};
 
 /// The characters shown two columns wide: East Asian wide and full-width characters, and emoji shown as pictures.
@@ -58,6 +60,7 @@ const WIDE: &[(u32, u32)] = &[
 const ZERO_WIDTH_JOINER: char = '\u{200D}';
 const EMOJI_PRESENTATION: char = '\u{FE0F}';
 
+/// The columns `c` takes on its own: none for a combining mark or a joiner, two for a wide character, else one.
 fn char_width(c: char) -> usize {
 	let zero = matches!(
 		c.general_category(),
@@ -70,11 +73,11 @@ fn char_width(c: char) -> usize {
 	let code = u32::from(c);
 	let wide = WIDE.binary_search_by(|&(lo, hi)| {
 		if hi < code {
-			std::cmp::Ordering::Less
+			Ordering::Less
 		} else if lo > code {
-			std::cmp::Ordering::Greater
+			Ordering::Greater
 		} else {
-			std::cmp::Ordering::Equal
+			Ordering::Equal
 		}
 	});
 	if wide.is_ok() { 2 } else { 1 }
@@ -85,7 +88,7 @@ pub(super) fn display_width(text: &str) -> usize {
 	let mut width = 0;
 	let mut previous = None;
 	for c in text.chars() {
-		if c == EMOJI_PRESENTATION && previous.is_some_and(|p| char_width(p) == 1) {
+		if c == EMOJI_PRESENTATION && previous.is_some_and(|previous| char_width(previous) == 1) {
 			width += 1;
 		}
 		width += char_width(c);

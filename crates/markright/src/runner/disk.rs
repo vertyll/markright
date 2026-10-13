@@ -84,6 +84,7 @@ impl Runner<'_> {
 	}
 }
 
+/// The repository at `root`, opened for reading and writing inside it only.
 fn open(root: &Path) -> Result<Disk, Error> {
 	Dir::open_ambient_dir(root, ambient_authority())
 		.map(Disk)

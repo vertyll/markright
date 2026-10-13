@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ config.title }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ config.description }}{% endblock %}">
+  <meta name="color-scheme" content="light dark">
+  {#- The site has no icon; an empty one keeps browsers from asking for /favicon.ico. #}
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="{{ get_url(path='markright.css', cachebust=true) }}" integrity="sha384-{{ get_hash(path='markright.css', sha_type=384) }}">
+  {#- The settings a reader can change, for the scripts, and the script that applies them before the page is drawn,
+  so it does not change under the reader. #}
+  {%- set reader = load_data(path="data/settings.toml") %}
+  <script type="application/json" id="markright-settings">{{ reader.settings | json_encode | safe }}</script>
+  <script src="{{ get_url(path='js/early.js', cachebust=true) }}" integrity="sha384-{{ get_hash(path='js/early.js', sha_type=384) }}"></script>
+  <script type="module" src="{{ get_url(path='js/markright.js', cachebust=true) }}" integrity="sha384-{{ get_hash(path='js/markright.js', sha_type=384) }}"></script>
+</head>
+<body data-icons="{{ get_url(path='icons.svg', cachebust=true) }}">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="site-title" href="{{ get_url(path='@/_index.md') }}">markright</a>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <ul>
+          {#- The 404 page has no path. #}
+          {%- set here = current_path or "" %}
+          {%- set in_rules = here is starting_with(pat="/docs/linters/") or here is starting_with(pat="/docs/formatters/") %}
+          <li><a href="{{ get_url(path='@/docs/_index.md') }}"{% if here is starting_with(pat="/docs/") and not in_rules %} aria-current="true"{% endif %}>Documentation</a></li>
+          <li><a href="{{ get_url(path='@/docs/linters/_index.md') }}"{% if here is starting_with(pat="/docs/linters/") %} aria-current="true"{% endif %}>Linters</a></li>
+          <li><a href="{{ get_url(path='@/docs/formatters/_index.md') }}"{% if here is starting_with(pat="/docs/formatters/") %} aria-current="true"{% endif %}>Formatters</a></li>
+          <li><a href="{{ get_url(path='@/playground.md') }}"{% if here is starting_with(pat="/playground/") %} aria-current="true"{% endif %}>Playground</a></li>
+        </ul>
+      </nav>
+      <div class="site-tools">
+        <button type="button" class="search-open" data-search-open aria-haspopup="dialog">
+          {{ <icon name="magnifying-glass" /> }}<span>Search</span><kbd>/</kbd>
+        </button>
+        <a class="tool" href="{{ config.extra.repository }}" title="GitHub">{{ <icon name="github" size={20} /> }}<span class="visually-hidden">GitHub</span></a>
+        <a class="tool" href="{{ get_url(path='@/settings.md') }}" title="Settings" data-settings-open>{{ <icon name="cog-6-tooth" size={20} /> }}<span class="visually-hidden">Settings</span></a>
+        <button type="button" class="tool theme-toggle" title="Theme" data-theme-toggle>
+          <span class="theme-icon theme-icon-system">{{ <icon name="computer-desktop" size={20} /> }}</span>
+          <span class="theme-icon theme-icon-light">{{ <icon name="sun" size={20} /> }}</span>
+          <span class="theme-icon theme-icon-dark">{{ <icon name="moon" size={20} /> }}</span>
+          <span class="visually-hidden" data-theme-label>Theme</span>
+        </button>
+        <button type="button" class="tool menu-toggle" title="Menu" aria-controls="site-nav" aria-expanded="false" data-menu-toggle>{{ <icon name="bars-3" size={20} /> }}<span class="visually-hidden">Menu</span></button>
+      </div>
+    </div>
+  </header>
+  <main id="main" class="{% block main_class %}page{% endblock %}">
+    {%- block main %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <a href="{{ get_url(path='@/docs/_index.md') }}#license">MIT License</a>
+      <div class="site-footer-links">
+        <a href="{{ get_url(path='wasm/THIRD-PARTY-LICENSES.txt') }}">Third-party licenses</a>
+        <a href="{{ config.extra.repository }}" title="GitHub">{{ <icon name="github" size={20} /> }}<span class="visually-hidden">GitHub</span></a>
+      </div>
+    </div>
+  </footer>
+  <dialog class="settings-panel" aria-labelledby="settings-panel-title" data-settings-panel>
+    <div class="settings-panel-head">
+      <h2 id="settings-panel-title" class="settings-panel-title">Settings</h2>
+      <button type="button" class="settings-panel-close" title="Close settings" data-settings-close>{{ <icon name="x-mark" size={18} /> }}<span class="visually-hidden">Close settings</span></button>
+    </div>
+    {{ <settings id="panel" /> }}
+  </dialog>
+  <dialog class="search" aria-label="Search the documentation" data-search data-index="{{ get_url(path='search_index.en.json', cachebust=true) }}">
+    <div class="search-head">
+      {{ <icon name="magnifying-glass" size={20} /> }}
+      <input type="search" placeholder="Search the documentation" aria-label="Search the documentation" aria-controls="search-results" autocomplete="off" spellcheck="false" data-search-input>
+      <button type="button" class="search-close" title="Close search" data-search-close>{{ <icon name="x-mark" size={18} /> }}<span class="visually-hidden">Close search</span></button>
+    </div>
+    <ul id="search-results" class="search-results" data-search-results></ul>
+    <p class="search-status" aria-live="polite" data-search-status></p>
+  </dialog>
+</body>
+</html>

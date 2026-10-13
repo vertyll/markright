@@ -13,13 +13,19 @@ bash scripts/check.sh
    playground compiled to WebAssembly when that target is installed;
 3. the tests of every crate, the schema, the examples and the tables of the documentation included;
 4. `cargo doc`, which fails on a broken link or tag in the API documentation;
-5. `markright run` on this repository's own documents.
+5. `markright check` on this repository's own documents;
+6. the type check, Biome's formatting and lints and the tests of the site's scripts and styles, with the scripts'
+   coverage in `site/assets/lcov.info`.
 
 The version of Rust is pinned in `rust-toolchain.toml`, so the checks run with the same compiler and the same lints
 here and in CI; `rustup install` fetches it. Raising it is a change of its own, together with `rust-version` in
 `Cargo.toml`. The lints are set once, in `[workspace.lints]` of `Cargo.toml`, and every crate takes them; a warning
 fails the checks. CI runs the same script on every push and pull request to `main`, and on every tag, with the
 WebAssembly target installed.
+
+Node runs the checks of the site's scripts and styles; the tools they need, TypeScript, esbuild and Biome, are pinned
+in `site/assets/package.json` and fetched by `npm ci`. `npm run format` in `site/assets` formats them as Biome
+expects.
 
 Every script in `scripts/` says at its top what it does, how to call it and what it needs. They are Bash, so the
 same file runs everywhere: on Windows, run them in Git Bash, which comes with Git, or in WSL.
@@ -51,6 +57,31 @@ same file runs everywhere: on Windows, run them in Git Bash, which comes with Gi
 Nothing else changes: the runner, the commands, the configuration's name checks and the tables of Rules and
 Configuration follow the registry and the schema.
 
+## The documentation site
+
+```bash
+bash scripts/site.sh serve
+```
+
+`scripts/site.sh` writes the site's pages with `cargo xtask site`, compiles the playground to WebAssembly, lists the
+licenses of the crates it includes, bundles the scripts, then runs Zola: `serve` serves the site at
+<http://127.0.0.1:1111/> and rebuilds it on every change of `site/`, `build` writes it into `site/public`. It needs the
+`wasm32-unknown-unknown` target, wasm-bindgen-cli at the version of the `wasm-bindgen` crate in `Cargo.lock`, Zola
+0.23.6, and Node. Then
+
+```bash
+cargo xtask site check site/public https://vertyll.github.io/markright/
+```
+
+fails on a link of the built site that leads to no page or no anchor. CI builds and checks the site on every push and
+pull request, and publishes it to GitHub Pages on every tag.
+
+Every page that comes from a document or a rule is generated: a change goes into the document, the rule or
+`xtask/src/site`, never into `site/content`, which is rewritten on every build. A new document listed in
+`CONTENTS.md` needs a place on the site, in `xtask/src/site/documents.rs`, or the build fails. A setting for readers
+is an entry in `site/data/settings.toml`, which the settings form shows, and a rule in `site/assets/styles` that
+follows its attribute on the root element.
+
 ## Releasing
 
 A release is an annotated tag on `main` that follows Semantic Versioning: a new formatter or linter, or a changed
@@ -64,7 +95,10 @@ git push origin main && git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z
 
 The tag runs the checks again; when they pass, CI builds the command for every target below and publishes the
 release with notes generated from the merged changes. Each archive is named `markright-<target>.tar.gz`, or `.zip` on
-Windows, and `SHA256SUMS` lists their checksums.
+Windows, and holds the command, its `LICENSE` and `THIRD-PARTY-LICENSES.txt`, which `cargo xtask licenses` writes
+with the license of every crate built into it; `SHA256SUMS` lists their checksums. The same tag publishes the
+documentation site, once the repository's Pages settings take their source from GitHub Actions and the `github-pages`
+environment allows tags matching `v*`.
 
 | Target                      | System                              |
 |-----------------------------|-------------------------------------|

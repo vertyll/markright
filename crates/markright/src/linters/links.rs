@@ -1,3 +1,5 @@
+//! The links linter: relative links lead to files inside the repository, and every link has a target and text.
+
 use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, escapes, targets};
 use crate::issue::Finding;
 use crate::markdown::{Document, LinkKind};
@@ -16,9 +18,9 @@ impl DocumentLinter for Links {
 		}
 	}
 
-	fn check(&self, c: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
+	fn check(&self, context: &Context<'_>, path: &str, document: &Document) -> Result<Vec<Finding>, Error> {
 		let mut out = Vec::new();
-		for target in targets(path, doc) {
+		for target in targets(path, document) {
 			let Some(file) = &target.file else { continue };
 			if escapes(file) {
 				out.push(Finding::new(
@@ -26,7 +28,7 @@ impl DocumentLinter for Links {
 					target.line,
 					format!("link leaves the repository: {}", target.raw),
 				));
-			} else if !c.repo.exists(file).map_err(|source| Error::Resolve {
+			} else if !context.repo.exists(file).map_err(|source| Error::Resolve {
 				linter: self.about().name,
 				path: file.clone(),
 				source,
@@ -34,7 +36,7 @@ impl DocumentLinter for Links {
 				out.push(Finding::new(path, target.line, format!("broken link: {}", target.raw)));
 			}
 		}
-		for link in &doc.links {
+		for link in &document.links {
 			match &link.kind {
 				LinkKind::Inline { text, .. } | LinkKind::Image { alt: text } if link.target.is_empty() => {
 					out.push(Finding::new(
@@ -53,7 +55,7 @@ impl DocumentLinter for Links {
 				_ => {}
 			}
 		}
-		for reference in &doc.undefined_references {
+		for reference in &document.undefined_references {
 			out.push(Finding::new(
 				path,
 				reference.line,

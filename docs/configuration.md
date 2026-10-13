@@ -189,14 +189,14 @@ Each section skips paths on its own, so a file can be linted but never formatted
 - `paths`: a matching document is excluded.
 - `paths-except`: when set, a document that matches none of these is excluded as well, so a section can be limited
   to a few directories.
-- `formatters.exclusions`: the formatters leave an excluded document as it is, and `run` does not report it as
+- `formatters.exclusions`: the formatters leave an excluded document as it is, and `check` does not report it as
   unformatted.
 - `linters.exclusions`: no linter reports an issue in an excluded document, and `index` does not ask for it.
 - `linters.exclusions.rules`: an issue is dropped when it matches every field a rule sets: `path` or `path-except`
   against the document, `linters` against the linter's name, `text` against the message. A rule sets at least two of
   those, and never both `path` and `path-except`, so it cannot silence a linter everywhere by accident; that is what
   `disable` is for.
-- `warn-unused`: `run` prints a warning to standard error for every path pattern that matches no document and every
+- `warn-unused`: `check` prints a warning to standard error for every path pattern that matches no document and every
   rule that drops no issue, so stale exclusions surface. It does not change the exit code.
 
 Paths and texts are regular expressions, in the syntax of Rust's `regex` crate, matched anywhere in the path relative
@@ -205,7 +205,7 @@ any of this: [Document discovery](mechanisms/document-discovery.md).
 
 ## Output
 
-`output.formats` chooses what `markright run` writes, and where: `stdout`, `stderr`, or a file relative to the working
+`output.formats` chooses what `markright check` writes, and where: `stdout`, `stderr`, or a file relative to the working
 directory. Without any format, it writes text to standard output.
 
 | Format       | Content                                                                                             |
@@ -238,7 +238,7 @@ CI fetches the command of a pinned release and fails the build on exit code `1`:
 
 ```bash
 curl -fsSL https://github.com/vertyll/markright/releases/download/v0.1.0/markright-x86_64-unknown-linux-gnu.tar.gz | tar -xz
-./markright run
+./markright check
 ```
 
 Each release has an archive for every system it is built for, named after its target; the list is in

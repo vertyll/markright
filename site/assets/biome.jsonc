@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": ["scripts/**", "styles/**", "*.json", "*.jsonc"]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
+  },
+  "linter": {
+    "rules": {
+      "preset": "recommended",
+      "complexity": {
+        // tsconfig's noPropertyAccessFromIndexSignature asks for brackets where a key may be missing, as in
+        // dataset["setting"]; this rule asks for the opposite.
+        "useLiteralKeys": "off"
+      },
+      "style": {
+        // It compares selectors that never match the same element, such as the table of contents' links and the
+        // navigation's; the order of the rules that do override each other is kept by hand.
+        "noDescendingSpecificity": "off"
+      }
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}

@@ -1,3 +1,5 @@
+//! The anchors linter: a `#fragment` names a heading or an HTML id of its document.
+
 use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, escapes, targets};
 use crate::issue::Finding;
 use crate::markdown::Document;
@@ -19,18 +21,19 @@ impl DocumentLinter for Anchors {
 		}
 	}
 
-	fn check(&self, c: &Context<'_>, path: &str, doc: &Document) -> Result<Vec<Finding>, Error> {
-		let broken = targets(path, doc).into_iter().filter(|t| {
-			let Some(anchor) = &t.anchor else { return false };
-			let file = t.document(path);
+	fn check(&self, context: &Context<'_>, path: &str, document: &Document) -> Result<Vec<Finding>, Error> {
+		let broken = targets(path, document).into_iter().filter(|target| {
+			let Some(anchor) = &target.anchor else { return false };
+			let file = target.document(path);
 			!escapes(file)
-				&& c.repo
+				&& context
+					.repo
 					.docs
 					.get(file)
-					.is_some_and(|target| !target.anchors.contains(&anchor.to_lowercase()))
+					.is_some_and(|linked| !linked.anchors.contains(&anchor.to_lowercase()))
 		});
 		Ok(broken
-			.map(|t| Finding::new(path, t.line, format!("broken anchor: {}", t.raw)))
+			.map(|target| Finding::new(path, target.line, format!("broken anchor: {}", target.raw)))
 			.collect())
 	}
 }

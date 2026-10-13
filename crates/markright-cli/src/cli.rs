@@ -16,7 +16,7 @@ pub(crate) struct Cli {
 #[derive(Debug, Subcommand)]
 pub(crate) enum Command {
 	/// Report formatting and lint issues; exit 1 when there are any
-	Run(Target),
+	Check(Target),
 	/// Apply the formatters in place
 	Fmt(Target),
 	/// List the linters and whether the configuration enables them
@@ -62,6 +62,8 @@ impl Target {
 
 /// The configuration a command runs with, and the file it was read from, if any.
 pub(crate) struct Found {
+	/// The configuration.
 	pub(crate) config: Config,
+	/// The file it was read from; none when the defaults apply.
 	pub(crate) path: Option<PathBuf>,
 }

@@ -1,0 +1,70 @@
+{#- The playground: a document and its configuration, and what markright makes of them, in the browser. -#}
+{% extends "base.html" %}
+{% block title %}{{ page.title }} – {{ config.title }}{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block main %}
+<h1>{{ page.title }}</h1>
+<p class="lead">Edit the document and see what <code>markright check</code> reports and what <code>markright fmt</code>
+writes. This is markright itself, compiled to WebAssembly: the same parser and rules as the command, running in your
+browser, so nothing is sent anywhere.</p>
+<p class="lead">The document is <code>doc.md</code>, the only file of its repository, so a link to any other file is
+broken. Leave the configuration empty for the defaults, or write one as
+<a href="{{ get_url(path='@/docs/configuration.md') }}">Configuration</a> describes.</p>
+<div class="playground" data-playground data-module="{{ get_url(path='wasm/markright_wasm.js', cachebust=true) }}" data-wasm="{{ get_url(path='wasm/markright_wasm_bg.wasm', cachebust=true) }}" data-wasm-integrity="sha384-{{ get_hash(path='wasm/markright_wasm_bg.wasm', sha_type=384) }}">
+  <div class="playground-input">
+    <div class="playground-bar">
+      <label class="playground-label" for="playground-document">{{ <icon name="document-text" /> }} doc.md</label>
+      <button type="button" class="playground-wrap" title="Wrap long lines" aria-pressed="false" data-playground-wrap>{{ <icon name="bars-3-bottom-left" /> }}<span class="visually-hidden">Wrap long lines</span></button>
+    </div>
+    <textarea id="playground-document" class="playground-editor" spellcheck="false" autocomplete="off" autocapitalize="off" data-playground-document># Release notes
+
+### What changed
+
+The parser is faster -&gt; tables render sooner.   
+
+| Option | Default |
+|---|---|
+| `line-length` | 120 |
+
+See [Setup](#setup) and the [guide](docs/guide.md).
+
+![](diagram.png)
+
+```
+markright check
+```
+</textarea>
+    <details class="playground-config">
+      <summary>{{ <icon name="adjustments-horizontal" /> }} <span data-playground-config-name>.markright.yaml</span></summary>
+      <fieldset class="playground-syntax">
+        <legend class="visually-hidden">Configuration format</legend>
+        <label><input type="radio" name="playground-syntax" value="yaml" checked data-playground-syntax> YAML</label>
+        <label><input type="radio" name="playground-syntax" value="toml" data-playground-syntax> TOML</label>
+      </fieldset>
+      <label class="visually-hidden" for="playground-config">Configuration</label>
+      <textarea id="playground-config" class="playground-editor playground-editor-config" spellcheck="false" autocomplete="off" autocapitalize="off" data-playground-config
+        data-placeholder-yaml="Empty means the defaults, for example:&#10;version: &quot;1&quot;&#10;linters:&#10;  disable: [links]"
+        data-placeholder-toml="Empty means the defaults, for example:&#10;version = &quot;1&quot;&#10;[linters]&#10;disable = [&quot;links&quot;]"
+        placeholder="Empty means the defaults, for example:&#10;version: &quot;1&quot;&#10;linters:&#10;  disable: [links]"></textarea>
+    </details>
+  </div>
+  <div class="playground-result">
+    <div class="playground-bar">
+      <div class="playground-tabs" role="tablist" aria-label="Result">
+        <button type="button" role="tab" id="playground-tab-check" aria-controls="playground-check" aria-selected="true" data-playground-tab>markright check</button>
+        <button type="button" role="tab" id="playground-tab-fmt" aria-controls="playground-fmt" aria-selected="false" tabindex="-1" data-playground-tab>markright fmt</button>
+      </div>
+      <button type="button" class="playground-wrap" title="Wrap long lines" aria-pressed="false" data-playground-wrap>{{ <icon name="bars-3-bottom-left" /> }}<span class="visually-hidden">Wrap long lines</span></button>
+    </div>
+    <div id="playground-check" class="playground-panel" role="tabpanel" aria-labelledby="playground-tab-check">
+      <ol class="playground-issues" data-playground-issues></ol>
+      <p class="playground-status" aria-live="polite" data-playground-status>Loading markright…</p>
+    </div>
+    <div id="playground-fmt" class="playground-panel" role="tabpanel" aria-labelledby="playground-tab-fmt" hidden>
+      <pre class="playground-formatted" data-playground-formatted></pre>
+      <button type="button" class="playground-apply" data-playground-apply>{{ <icon name="check" /> }} Use this document</button>
+    </div>
+  </div>
+</div>
+<p class="playground-note">The playground includes the crates listed in its <a href="{{ get_url(path='wasm/THIRD-PARTY-LICENSES.txt') }}">third-party licenses</a>.</p>
+{% endblock %}

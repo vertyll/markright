@@ -11,7 +11,7 @@
       "const": "1"
     },
     "output": {
-      "description": "Where markright run writes issues; text to stdout when no format is set.",
+      "description": "Where markright check writes issues; text to stdout when no format is set.",
       "$ref": "#/$defs/Output",
       "default": {
         "formats": {
@@ -89,7 +89,7 @@
   ],
   "$defs": {
     "Output": {
-      "description": "Where `markright run` writes issues.",
+      "description": "Where `markright check` writes issues.",
       "type": "object",
       "properties": {
         "formats": {

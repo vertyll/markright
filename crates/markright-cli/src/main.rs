@@ -1,4 +1,4 @@
-//! The markright command: `markright run` reports, `markright fmt` rewrites.
+//! The markright command: `markright check` reports, `markright fmt` rewrites.
 
 mod cli;
 
@@ -22,7 +22,7 @@ use crate::cli::{Cli, Command, ConfigCommand, Found};
 enum Exit {
 	/// All is well.
 	Clean,
-	/// `run` found issues.
+	/// `check` found issues.
 	Issues,
 	/// The command line or the configuration is wrong, or the run failed.
 	Failed,
@@ -98,6 +98,7 @@ fn usage(e: &clap::Error, stdout: &mut dyn Write, stderr: &mut dyn Write) -> Exi
 	}
 }
 
+/// Runs `command` and says how it ended, or why it failed.
 fn execute(
 	command: &Command,
 	stdout: &mut dyn Write,
@@ -109,7 +110,7 @@ fn execute(
 			writeln!(stdout, "markright {}", env!("CARGO_PKG_VERSION"))?;
 			return Ok(Exit::Clean);
 		}
-		Command::Run(target)
+		Command::Check(target)
 		| Command::Fmt(target)
 		| Command::Linters(target)
 		| Command::Formatters(target)
@@ -117,20 +118,20 @@ fn execute(
 	};
 	let Found { config, path } = target.configuration()?;
 	match command {
-		Command::Run(_) => lint(&target.root, &config, stdout, stderr, stop),
+		Command::Check(_) => check(&target.root, &config, stdout, stderr, stop),
 		Command::Fmt(_) => format(&target.root, &config, stdout, stop),
 		Command::Linters(_) => {
 			let rules = linters::ALL
 				.iter()
-				.map(|l| l.about())
-				.map(|a| (a.name, a.description, config.linter_enabled(a.name)));
+				.map(|linter| linter.about())
+				.map(|about| (about.name, about.description, config.linter_enabled(about.name)));
 			list(stdout, rules)
 		}
 		Command::Formatters(_) => {
 			let rules = formatters::ALL
 				.iter()
-				.map(|f| f.about())
-				.map(|a| (a.name, a.description, config.formatter_enabled(a.name)));
+				.map(|formatter| formatter.about())
+				.map(|about| (about.name, about.description, config.formatter_enabled(about.name)));
 			list(stdout, rules)
 		}
 		Command::Config(_) | Command::Version => verified(stdout, path.as_deref()),
@@ -151,7 +152,8 @@ fn verified(stdout: &mut dyn Write, path: Option<&Path>) -> Result<Exit, Failure
 	Ok(Exit::Clean)
 }
 
-fn lint(
+/// `markright check`: reports the issues in every configured format, and the exclusions that matched nothing.
+fn check(
 	root: &Path,
 	config: &Config,
 	stdout: &mut dyn Write,
@@ -180,6 +182,7 @@ fn lint(
 	})
 }
 
+/// `markright fmt`: applies the formatters and lists the files they changed.
 fn format(root: &Path, config: &Config, stdout: &mut dyn Write, stop: &AtomicBool) -> Result<Exit, Failure> {
 	let report = Runner {
 		root,
@@ -198,9 +201,12 @@ fn format(root: &Path, config: &Config, stdout: &mut dyn Write, stop: &AtomicBoo
 fn rules() -> Vec<Rule> {
 	let formatters = formatters::ALL
 		.iter()
-		.map(|f| f.about())
-		.map(|a| (a.name, a.description));
-	let linters = linters::ALL.iter().map(|l| l.about()).map(|a| (a.name, a.description));
+		.map(|formatter| formatter.about())
+		.map(|about| (about.name, about.description));
+	let linters = linters::ALL
+		.iter()
+		.map(|linter| linter.about())
+		.map(|about| (about.name, about.description));
 	formatters
 		.chain(linters)
 		.map(|(name, description)| Rule {

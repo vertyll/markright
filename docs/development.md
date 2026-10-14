@@ -95,8 +95,8 @@ A release is an annotated tag on `main`, `vX.Y.Z`, made once the version in `[wo
 raised, so `markright version` prints it. The tag runs the checks again; when they pass, CI builds the command for
 every target below and publishes the release, with notes generated from the merged changes, and the documentation
 site. Each archive is named `markright-<target>.tar.gz`, or `.zip` on Windows, and holds the command, its `LICENSE`
-and `THIRD-PARTY-LICENSES.txt`, which `cargo xtask licenses` writes with the license of every crate built into it;
-`SHA256SUMS` lists their checksums.
+and `THIRD-PARTY-LICENSES.txt`, which `cargo xtask licenses` writes with the license of every crate built into it,
+the Rust standard library included; `SHA256SUMS` lists their checksums.
 
 | Target                      | System                              |
 |-----------------------------|-------------------------------------|

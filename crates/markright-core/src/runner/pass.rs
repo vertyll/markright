@@ -13,7 +13,7 @@ use crate::issue::{Finding, Issue};
 use crate::linters::{self, Context, Kind, Linter, Repo};
 use crate::markdown::Document;
 
-/// Formats the documents at `paths` in `files` and, in [`Mode::Lint`], lints the result. It reads `files` and never
+/// Formats the documents at `paths` in `files` and, unless in [`Mode::Format`], lints the result. It reads `files` and never
 /// writes to them, so it works the same on disk and in memory. It spreads the documents over the cores and stops
 /// once `stop` is set.
 pub(crate) fn check(
@@ -31,7 +31,7 @@ pub(crate) fn check(
 	};
 	let Formatting { documents, fixed } = pass.format_all(files, paths, stop)?;
 	let repo = Repo::new(files, documents);
-	if mode == Mode::Lint {
+	if mode != Mode::Format {
 		pass.lint(&repo, paths, stop)?;
 	}
 	let mut issues = pass.issues;

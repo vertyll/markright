@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand};
-use markright::config::{Config, ConfigError};
+use markright_core::config::{Config, ConfigError};
 
 /// Formats and lints the Markdown of a repository.
 #[derive(Debug, Parser)]
@@ -16,7 +16,7 @@ pub(crate) struct Cli {
 #[derive(Debug, Subcommand)]
 pub(crate) enum Command {
 	/// Report formatting and lint issues; exit 1 when there are any
-	Check(Target),
+	Check(Check),
 	/// Apply the formatters in place
 	Fmt(Target),
 	/// List the linters and whether the configuration enables them
@@ -34,6 +34,16 @@ pub(crate) enum Command {
 pub(crate) enum ConfigCommand {
 	/// Check the configuration file and exit
 	Verify(Target),
+}
+
+/// What `check` does besides reporting.
+#[derive(Debug, Args)]
+pub(crate) struct Check {
+	/// Apply the formatters in place first, then report what they cannot fix
+	#[arg(long)]
+	pub(crate) fix: bool,
+	#[command(flatten)]
+	pub(crate) target: Target,
 }
 
 /// The repository a command works on, and its configuration.

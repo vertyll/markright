@@ -900,6 +900,17 @@ dependencies = [
 name = "markright"
 version = "0.1.0"
 dependencies = [
+ "clap",
+ "ctrlc",
+ "markright-core",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "markright-core"
+version = "0.1.0"
+dependencies = [
  "cap-std",
  "percent-encoding",
  "proptest",
@@ -918,21 +929,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "markright-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "ctrlc",
- "markright",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
 name = "markright-wasm"
 version = "0.1.0"
 dependencies = [
- "markright",
+ "markright-core",
  "serde",
  "serde-wasm-bindgen",
  "thiserror",
@@ -2194,7 +2194,7 @@ checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
 name = "xtask"
 version = "0.1.0"
 dependencies = [
- "markright",
+ "markright-core",
  "merman",
  "regex",
  "schemars",

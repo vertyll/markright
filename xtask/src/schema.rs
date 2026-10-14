@@ -5,8 +5,8 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use markright::config::Config;
-use markright::{formatters, linters};
+use markright_core::config::Config;
+use markright_core::{formatters, linters};
 use serde_json::Value;
 
 /// Where the schema lives in the repository.

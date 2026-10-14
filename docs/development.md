@@ -32,8 +32,8 @@ same file runs everywhere: on Windows, run them in Git Bash, which comes with Gi
 
 ## Adding a formatter or linter
 
-1. Write it in a file of its own in `crates/markright/src/formatters` or `crates/markright/src/linters`, as a type
-   that implements `Formatter`, `DocumentLinter` or `RepositoryLinter`:
+1. Write it in a file of its own in `crates/markright-core/src/formatters` or `crates/markright-core/src/linters`, as
+   a type that implements `Formatter`, `DocumentLinter` or `RepositoryLinter`:
    [Architecture: Registries](architecture.md#registries).
 2. Add it to `ALL` in `formatters.rs` or `linters.rs`, next to the directory; its place in the list decides when it
    runs.

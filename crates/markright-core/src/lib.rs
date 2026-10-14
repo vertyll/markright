@@ -1,4 +1,4 @@
-//! Formats and lints the Markdown of a repository.
+//! Formats and lints the Markdown of a repository: the library behind the `markright` command and its playground.
 
 pub mod config;
 #[cfg(feature = "disk")]

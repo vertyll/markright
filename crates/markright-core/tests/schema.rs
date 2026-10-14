@@ -5,7 +5,7 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
-use markright::config::{self, Config, Syntax};
+use markright_core::config::{self, Config, Syntax};
 use serde_json::Value;
 
 fn repository() -> &'static Path {

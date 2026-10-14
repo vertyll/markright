@@ -9,15 +9,16 @@ repositories.
 
 ## Commands
 
-| Command                   | What it does                                                                                                | Exit code          |
-|---------------------------|-------------------------------------------------------------------------------------------------------------|--------------------|
-| `markright check`         | reports every linter's issues and every line a formatter would change, in the configured formats; no writes | `1` when any issue |
-| `markright fmt`           | applies the formatters in place and lists the files it changed                                              | `0`                |
-| `markright linters`       | lists the linters and whether the configuration enables each                                                | `0`                |
-| `markright formatters`    | lists the formatters and whether the configuration enables each                                             | `0`                |
-| `markright config verify` | checks the configuration file and changes nothing                                                           | `0`                |
-| `markright version`       | prints the version; `--version` does the same                                                               | `0`                |
-| `markright help`          | prints the commands and options; `--help` does the same, and `markright help run` explains one command      | `0`                |
+| Command                   | What it does                                                                                                        | Exit code                  |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------|----------------------------|
+| `markright check`         | reports every linter's issues and every line a formatter would change, in the configured formats; no writes         | `1` when any issue         |
+| `markright check --fix`   | applies the formatters in place, lists the files it changed on standard error, then reports what no formatter fixes | `1` when any issue is left |
+| `markright fmt`           | applies the formatters in place and lists the files it changed                                                      | `0`                        |
+| `markright linters`       | lists the linters and whether the configuration enables each                                                        | `0`                        |
+| `markright formatters`    | lists the formatters and whether the configuration enables each                                                     | `0`                        |
+| `markright config verify` | checks the configuration file and changes nothing                                                                   | `0`                        |
+| `markright version`       | prints the version; `--version` does the same                                                                       | `0`                        |
+| `markright help`          | prints the commands and options; `--help` does the same, and `markright help check` explains one command            | `0`                        |
 
 Each takes an optional root, the current directory by default, and `--config` with another configuration file. A
 configuration or repository that cannot be read, or a run interrupted with Ctrl+C, ends any command with exit code

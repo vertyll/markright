@@ -13,7 +13,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-markright.workspace = true
+markright-core.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 

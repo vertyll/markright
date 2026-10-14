@@ -14,7 +14,7 @@ cd "$(dirname "$0")/.."
 
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo clippy --package markright --no-default-features --all-targets --locked -- -D warnings
+cargo clippy --package markright-core --no-default-features --all-targets --locked -- -D warnings
 if rustup target list --installed 2>/dev/null | grep -qx wasm32-unknown-unknown; then
   cargo clippy --package markright-wasm --target wasm32-unknown-unknown --locked -- -D warnings
 else
@@ -22,7 +22,7 @@ else
 fi
 cargo test --workspace --locked
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked --quiet
-cargo run --quiet --package markright-cli --locked -- check
+cargo run --quiet --package markright --locked -- check
 (cd site/assets && npm ci --ignore-scripts --no-audit --no-fund && npm run check && node --test --experimental-test-coverage \
   --test-reporter=spec --test-reporter-destination=stdout \
   --test-reporter=lcov --test-reporter-destination=lcov.info)

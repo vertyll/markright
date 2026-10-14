@@ -49,7 +49,7 @@ const CLEAN: &[(&str, &str)] = &[
 ];
 
 #[test]
-fn run_reports_formatting_and_lint_without_writing() {
+fn check_reports_formatting_and_lint_without_writing() {
 	let root = tree(&[("a.md", "# A\n\na -> b  \n[x](gone.md)\n")]);
 	let report = run(root.path(), &Config::default(), Mode::Lint);
 	assert_eq!(
@@ -85,7 +85,23 @@ formatted docs/b.md
 }
 
 #[test]
-fn run_is_clean_after_fmt() {
+fn fix_writes_and_reports_what_is_left() {
+	let root = tree(&[("a.md", "# A\n\na -> b  \n[x](gone.md)\n")]);
+	let report = run(root.path(), &Config::default(), Mode::Fix);
+	assert_eq!(
+		output(&report),
+		"formatted a.md\na.md:4: broken link: gone.md (links)\n",
+		"the formatters' fixes are written, and only the lint is reported"
+	);
+	assert_eq!(read(root.path(), "a.md"), "# A\n\na → b\n[x](gone.md)\n");
+	assert_eq!(
+		output(&run(root.path(), &Config::default(), Mode::Fix)),
+		"a.md:4: broken link: gone.md (links)\n"
+	);
+}
+
+#[test]
+fn check_is_clean_after_fmt() {
 	let root = tree(CLEAN);
 	run(root.path(), &Config::default(), Mode::Format);
 	assert_eq!(output(&run(root.path(), &Config::default(), Mode::Lint)), "");

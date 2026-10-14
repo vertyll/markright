@@ -26,21 +26,24 @@ curl -fsSL https://github.com/vertyll/markright/releases/download/v0.1.0/markrig
 ./markright check
 ```
 
-or build a pinned version with Cargo:
+or build it with Cargo, from crates.io or from a tag of the repository:
 
 ```bash
-cargo install --locked --git https://github.com/vertyll/markright --tag v0.1.0 markright-cli
+cargo install --locked markright
+cargo install --locked --git https://github.com/vertyll/markright --tag v0.1.0 markright
 ```
 
 ## Quick start
 
 ```bash
 markright fmt
+markright check --fix
 markright check
 ```
 
-`fmt` applies the formatters in place. `check` changes nothing and reports every issue, the lines `fmt` would change
-included, one per line, and exits with `1` when there is any:
+`fmt` applies the formatters in place. `check --fix` does the same and reports what they cannot fix. `check` changes
+nothing and reports every issue, the lines a formatter would change included, one per line, and exits with `1` when
+there is any; it is the one CI runs:
 
 ```text
 docs/guide.md:3: ASCII arrow or missing space around an arrow (arrows)

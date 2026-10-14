@@ -5,8 +5,8 @@
 
 use std::collections::BTreeMap;
 
-use markright::config::{self, Config, ConfigError};
-use markright::runner::{self, Mode};
+use markright_core::config::{self, Config, ConfigError};
+use markright_core::runner::{self, Mode};
 use serde::Serialize;
 
 /// The path the playground's document has: the only file of its repository, so a link to any other file is broken.
@@ -46,7 +46,7 @@ pub enum CheckError {
 	Syntax(String),
 	/// The check failed.
 	#[error(transparent)]
-	Run(#[from] markright::Error),
+	Run(#[from] markright_core::Error),
 }
 
 /// Checks `markdown` with `configuration`, the content of a `.markright.yaml` file when `syntax` is `yaml` or of a
@@ -69,7 +69,7 @@ pub fn check(markdown: &str, configuration: &str, syntax: &str) -> Result<Outcom
 	let documents = BTreeMap::from([(DOCUMENT.to_owned(), markdown.to_owned())]);
 	let checked = runner::check_documents(&documents, &config, Mode::Lint)?;
 	Ok(Outcome {
-		report: markright::output::text(&checked.issues),
+		report: markright_core::output::text(&checked.issues),
 		issues: checked
 			.issues
 			.into_iter()

@@ -29,9 +29,9 @@ pub struct Runner<'a> {
 /// exclusions that matched nothing.
 #[derive(Debug, Default)]
 pub struct Report {
-	/// The issues, in [`Mode::Lint`].
+	/// The issues: in [`Mode::Lint`] every one, in [`Mode::Fix`] those no formatter fixes, in [`Mode::Format`] none.
 	pub issues: Vec<Issue>,
-	/// The documents rewritten, in [`Mode::Format`], sorted.
+	/// The documents rewritten, sorted; none in [`Mode::Lint`].
 	pub formatted: Vec<String>,
 	/// A warning for each watched exclusion that matched nothing.
 	pub unused_exclusions: Vec<String>,
@@ -51,8 +51,8 @@ impl Files for Disk {
 }
 
 impl Runner<'_> {
-	/// Lists the repository's documents and checks them. In [`Mode::Format`] it writes every changed document back,
-	/// once every document is checked, and reports no issues; in [`Mode::Lint`] it changes nothing. It stops before
+	/// Lists the repository's documents and checks them. In [`Mode::Lint`] it changes nothing; in [`Mode::Format`]
+	/// and [`Mode::Fix`] it writes every changed document back, once every document is checked. It stops before
 	/// writing anything once `stop` is set.
 	///
 	/// # Errors
@@ -75,10 +75,9 @@ impl Runner<'_> {
 				source,
 			})?;
 		}
-		let formatted = checked.fixed.into_keys().collect();
 		Ok(Report {
-			issues: Vec::new(),
-			formatted,
+			issues: checked.issues,
+			formatted: checked.fixed.into_keys().collect(),
 			unused_exclusions: checked.unused_exclusions,
 		})
 	}

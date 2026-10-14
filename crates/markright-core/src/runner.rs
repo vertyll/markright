@@ -26,6 +26,9 @@ pub enum Mode {
 	Lint,
 	/// Keeps what the formatters change, and runs no linter.
 	Format,
+	/// Keeps what the formatters change and runs the linters on the result, so it reports only what no formatter
+	/// fixes.
+	Fix,
 }
 
 /// What a check found: the issues, sorted by path and line, the formatted content of every document the formatters

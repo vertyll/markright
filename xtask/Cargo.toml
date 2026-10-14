@@ -8,7 +8,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
-markright = { workspace = true, features = ["parallel"] }
+markright-core = { workspace = true, features = ["parallel"] }
 merman.workspace = true
 regex.workspace = true
 schemars.workspace = true

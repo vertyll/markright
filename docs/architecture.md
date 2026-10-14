@@ -22,7 +22,8 @@ flowchart LR
 2. The Markdown documents are listed: [Document discovery](mechanisms/document-discovery.md).
 3. Each document is parsed into lines, which lines are code, and the anchors its headings define.
 4. The enabled formatters run in the order `markright formatters` lists them, on every document the formatter
-   exclusions do not match. `fmt` writes a changed document back and stops there; `check` reports each changed line.
+   exclusions do not match. `fmt` writes a changed document back and stops there; `check` reports each changed line;
+   `check --fix` writes it back and goes on.
 5. Under `check`, the formatted text is parsed again, so the linters see what the file holds after `fmt`, and every
    document's anchors are known before any link is checked.
 6. The linters run per document, then `index` and `readme-links` over the whole set. Issues the linter exclusions
@@ -34,8 +35,8 @@ flowchart LR
 
 | Crate                   | Role                                                                                                                                                                                              |
 |-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `crates/markright`      | the library: parsing, the formatters and linters, the configuration, a run, the reports                                                                                                           |
-| `crates/markright-cli`  | the `markright` command: its subcommands and options, Ctrl+C, the exit codes                                                                                                                      |
+| `crates/markright-core` | the library: parsing, the formatters and linters, the configuration, a run, the reports                                                                                                           |
+| `crates/markright`      | the `markright` command: its subcommands and options, Ctrl+C, the exit codes                                                                                                                      |
 | `crates/markright-wasm` | one document checked in memory, compiled to WebAssembly for the playground                                                                                                                        |
 | `xtask`                 | the project's own tasks: the tables of Rules and Configuration, the JSON schema of the configuration, the pages of the documentation site and the check of its links, and the licenses of a build |
 
@@ -59,7 +60,7 @@ a page has neither a disk nor threads to spare.
 
 ```mermaid
 flowchart TD
-    cli[markright-cli] --> runner
+    cli[markright] --> runner
     cli --> config
     cli --> output
     wasm[markright-wasm] --> runner
@@ -109,8 +110,8 @@ run prints the same output however the work was spread. The compiler holds the t
 read-only, or behind a lock.
 
 An interrupted run, by Ctrl+C, stops at once: no new document is started, the ones being checked finish, and the
-command exits with code `2`. `fmt` writes only after every document is checked, so an interrupted `fmt` writes
-nothing.
+command exits with code `2`. `fmt` and `check --fix` write only after every document is checked, so an interrupted
+one writes nothing.
 
 A link to another document needs no look at the disk: the pass already knows every document and the directories that
 hold them. Any other target is looked up once per pass. Nothing is kept from one run to the next.

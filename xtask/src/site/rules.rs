@@ -6,9 +6,9 @@ use std::fmt::Write;
 use std::io;
 use std::path::Path;
 
-use markright::config::{self, Config, Syntax};
-use markright::runner::{self, Checked, Mode};
-use markright::{formatters, linters, markdown, output};
+use markright_core::config::{self, Config, Syntax};
+use markright_core::runner::{self, Checked, Mode};
+use markright_core::{formatters, linters, markdown, output};
 use serde_json::Value;
 
 use super::documents::{Section, section_page};

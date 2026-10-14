@@ -7,8 +7,8 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use markright::markdown::Document;
-use markright::{formatters, linters};
+use markright_core::markdown::Document;
+use markright_core::{formatters, linters};
 use serde_json::Value;
 
 /// A generated table: the document it is in, the name of its markers, its header and its rows.

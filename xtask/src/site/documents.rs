@@ -9,8 +9,8 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use markright::markdown::{self, Document};
-use markright::{formatters, linters};
+use markright_core::markdown::{self, Document};
+use markright_core::{formatters, linters};
 
 use super::diagrams;
 use super::markup::{front_matter, string};

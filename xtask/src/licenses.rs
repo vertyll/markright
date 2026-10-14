@@ -152,8 +152,8 @@ mod tests {
 
 	#[test]
 	fn the_crates_of_a_tree_without_the_workspace() {
-		let tree = "markright-cli v0.1.0 (/repo/crates/markright-cli)\nclap v4.6.7\nserde_derive v1.0.229 (proc-macro)\n\
-		            clap v4.6.7 (*)\nmarkright v0.1.0 (/repo/crates/markright)\n";
+		let tree = "markright v0.1.0 (/repo/crates/markright)\nclap v4.6.7\nserde_derive v1.0.229 (proc-macro)\n\
+		            clap v4.6.7 (*)\nmarkright-core v0.1.0 (/repo/crates/markright-core)\n";
 		let crates: Vec<_> = included(tree).into_iter().collect();
 		assert_eq!(crates, [("clap", "4.6.7"), ("serde_derive", "1.0.229")]);
 	}

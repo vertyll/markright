@@ -5,7 +5,7 @@
 use std::fmt::Write;
 use std::io;
 
-use markright::markdown::Document;
+use markright_core::markdown::Document;
 use merman::{OperationControl, RenderOutput, RenderRequest, Renderer, SvgRequest};
 
 /// The Mermaid themes each diagram is drawn in, by the class the stylesheet shows it by.

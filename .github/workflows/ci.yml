@@ -136,11 +136,11 @@ jobs:
           rustup target add ${{ matrix.target }}
 
       - name: Build the command
-        run: cargo build --release --locked --package markright-cli --target ${{ matrix.target }}
+        run: cargo build --release --locked --package markright --target ${{ matrix.target }}
 
       - name: List the licenses of what it includes
         shell: bash
-        run: cargo xtask licenses markright-cli ${{ matrix.target }} > THIRD-PARTY-LICENSES.txt
+        run: cargo xtask licenses markright ${{ matrix.target }} > THIRD-PARTY-LICENSES.txt
 
       - name: Pack it, with its license and those of what it includes
         shell: bash

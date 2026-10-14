@@ -42,7 +42,7 @@ fn path(p: &Path) -> &str {
 }
 
 #[test]
-fn run_reports_and_fmt_fixes() {
+fn check_reports_and_fmt_fixes() {
 	let root = tempfile::tempdir().unwrap();
 	fs::write(root.path().join("a.md"), "a -> b\n").unwrap();
 	let report = "a.md:1: ASCII arrow or missing space around an arrow (arrows)\nmarkright: 1 issue(s)\n";
@@ -56,6 +56,25 @@ fn run_reports_and_fmt_fixes() {
 		done(0, "markright: 0 issues\n", "")
 	);
 	assert_eq!(fs::read_to_string(root.path().join("a.md")).unwrap(), "a → b\n");
+}
+
+#[test]
+fn check_fix_fixes_and_reports_the_rest() {
+	let root = tempfile::tempdir().unwrap();
+	fs::write(root.path().join("a.md"), "a -> b\n").unwrap();
+	fs::write(root.path().join("b.md"), "a -> [b](gone.md)\n").unwrap();
+	let report = "b.md:1: broken link: gone.md (links)\nmarkright: 1 issue(s)\n";
+	assert_eq!(
+		call(&["check", "--fix", path(root.path())]),
+		done(1, report, "formatted a.md\nformatted b.md\n"),
+		"the fixed files go to the standard error, so the report on the standard output keeps its format"
+	);
+	assert_eq!(fs::read_to_string(root.path().join("a.md")).unwrap(), "a → b\n");
+	fs::remove_file(root.path().join("b.md")).unwrap();
+	assert_eq!(
+		call(&["check", "--fix", path(root.path())]),
+		done(0, "markright: 0 issues\n", "")
+	);
 }
 
 #[test]

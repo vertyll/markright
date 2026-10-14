@@ -49,11 +49,14 @@ wasm-bindgen --target web --no-typescript --out-dir site/static/wasm \
   target/wasm32-unknown-unknown/release/markright_wasm.wasm
 (cd site/assets && npm ci --ignore-scripts --no-audit --no-fund && npm run build)
 {
-  echo "The site includes the Inter typeface, the Heroicons icons and, in its playground, the crates below."
+  echo "The site includes the Inter typeface, the Heroicons icons, the styles of Mermaid's diagrams and, in its"
+  echo "playground, the crates below."
   printf '\n%s\nInter, by @fontsource-variable/inter\n\n' "$(printf '=%.0s' {1..80})"
   cat site/assets/node_modules/@fontsource-variable/inter/LICENSE
-  printf '\n%s\n' "$(printf '=%.0s' {1..80})"
-  cat site/assets/licenses/heroicons.txt
+  for notice in site/assets/licenses/*.txt; do
+    printf '\n%s\n' "$(printf '=%.0s' {1..80})"
+    cat "$notice"
+  done
   echo
   cargo xtask licenses markright-wasm wasm32-unknown-unknown
 } > site/static/THIRD-PARTY-LICENSES.txt

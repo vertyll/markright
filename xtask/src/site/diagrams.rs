@@ -1,6 +1,7 @@
 //! Mermaid diagrams as pictures: each `mermaid` code block of a document becomes, on its page, the diagram drawn as
 //! SVG twice, in a light and a dark theme, of which the stylesheet shows the one that matches the page's. GitHub draws
-//! the same blocks from the documents themselves.
+//! the same blocks from the documents themselves. The pictures carry Mermaid's styles, under the MIT license, which
+//! `site/assets/licenses/mermaid.txt` holds for the site's third-party licenses.
 
 use std::fmt::Write;
 use std::io;

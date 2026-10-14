@@ -126,13 +126,37 @@
   display: none;
 }
 
+/* Below this width the full search button and the navigation do not fit beside each other: the button keeps its icon. */
+@media (max-width: 1023px) {
+  .site-nav a {
+    padding: 0.35rem 0.5rem;
+  }
+
+  .search-open {
+    width: auto;
+    margin: 0;
+    padding: 0.45rem;
+    border: 0;
+    background: none;
+  }
+
+  .search-open span,
+  .search-open kbd {
+    display: none;
+  }
+}
+
 /*
- * Below this width the main navigation folds under the menu button, once the scripts run to open it, and the search
- * button keeps only its icon.
+ * Below this width the main navigation folds under the menu button, once the scripts run to open it, and the tools,
+ * the menu button last, keep to the right.
  */
 @media (max-width: 767px) {
   .site-header-inner {
     padding: 0 1rem;
+  }
+
+  .site-tools {
+    margin-left: auto;
   }
 
   .js .menu-toggle {
@@ -157,18 +181,17 @@
     flex-direction: column;
     padding: 0.5rem 1rem 1rem;
   }
+}
 
-  .search-open {
-    width: auto;
-    margin: 0;
-    padding: 0.45rem;
-    border: 0;
-    background: none;
+/* On the narrowest phones the tools stand closer, so the title and all of them fit on one line. */
+@media (max-width: 359px) {
+  .site-tools {
+    gap: 0;
   }
 
-  .search-open span,
-  .search-open kbd {
-    display: none;
+  .tool,
+  .search-open {
+    padding: 0.4rem;
   }
 }
 

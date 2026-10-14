@@ -7,8 +7,8 @@
 #
 # Usage: bash scripts/check.sh
 # Needs: Rust with rustfmt and Clippy, and Node; the wasm32-unknown-unknown target for the playground's lints, which
-# are skipped without it. The tools of the scripts and styles are fetched at the
-# versions pinned in site/assets/package.json.
+# are skipped without it. The tools of the scripts and styles are fetched at the versions pinned in
+# site/assets/package.json.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

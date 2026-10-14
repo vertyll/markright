@@ -87,8 +87,8 @@ default = "all"
 ```
 
 Both files above set the same. A repository has one of them: with both at its root, markright stops and asks to
-keep one. The rest is in [Configuration](docs/configuration.md), and
-every formatter and linter in [Rules](docs/rules.md).
+keep one. The rest is in [Configuration](docs/configuration.md), and every formatter and linter in
+[Rules](docs/rules.md).
 
 ## Documentation
 

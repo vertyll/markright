@@ -27,6 +27,9 @@ Node runs the checks of the site's scripts and styles; the tools they need, Type
 Inter typeface the site is set in are pinned in `site/assets/package.json` and fetched by `npm ci`. `npm run format` in
 `site/assets` formats them as Biome expects.
 
+With a SonarQube server at hand, `scripts/sonar.sh` runs the same checks, measures the coverage of the Rust code
+with cargo-llvm-cov, and sends both to the server for analysis; `sonar-project.properties` says what it analyses.
+
 Every script in `scripts/` says at its top what it does, how to call it and what it needs. They are Bash, so the
 same file runs everywhere: on Windows, run them in Git Bash, which comes with Git, or in WSL.
 
@@ -84,21 +87,16 @@ follows its attribute on the root element.
 
 ## Releasing
 
-A release is an annotated tag on `main` that follows Semantic Versioning: a new formatter or linter, or a changed
-default, is a minor version; a fix is a patch. A change to the configuration format raises `version` in
-`.markright.yaml` and `.markright.toml` and is a major version. The version in `[workspace.package]` of
-`Cargo.toml` is raised first, so `markright version` prints it.
+Versions follow Semantic Versioning: a new formatter or linter, or a changed default, is a minor version; a fix is a
+patch. A change to the configuration format raises `version` in `.markright.yaml` and `.markright.toml` and is a
+major version. Before `1.0.0`, a minor version may also change a default, and its release notes say so.
 
-```bash
-git push origin main && git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z
-```
-
-The tag runs the checks again; when they pass, CI builds the command for every target below and publishes the
-release with notes generated from the merged changes. Each archive is named `markright-<target>.tar.gz`, or `.zip` on
-Windows, and holds the command, its `LICENSE` and `THIRD-PARTY-LICENSES.txt`, which `cargo xtask licenses` writes
-with the license of every crate built into it; `SHA256SUMS` lists their checksums. The same tag publishes the
-documentation site, once the repository's Pages settings take their source from GitHub Actions and the `github-pages`
-environment allows tags matching `v*`.
+A release is an annotated tag on `main`, `vX.Y.Z`, made once the version in `[workspace.package]` of `Cargo.toml` is
+raised, so `markright version` prints it. The tag runs the checks again; when they pass, CI builds the command for
+every target below and publishes the release, with notes generated from the merged changes, and the documentation
+site. Each archive is named `markright-<target>.tar.gz`, or `.zip` on Windows, and holds the command, its `LICENSE`
+and `THIRD-PARTY-LICENSES.txt`, which `cargo xtask licenses` writes with the license of every crate built into it;
+`SHA256SUMS` lists their checksums.
 
 | Target                      | System                              |
 |-----------------------------|-------------------------------------|
@@ -109,7 +107,5 @@ environment allows tags matching `v*`.
 
 > [!WARNING]
 >
-> A published release is fetched by the repositories that pin it. Moving its tag changes what they get without a
-> trace; a correction is a new version.
-
-After a release, the repositories that use the tool raise the version in their CI.
+> A published release is fetched by the repositories that pin it. Its tag never moves, since that would change what
+> they get without a trace; a correction is a new version.

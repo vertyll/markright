@@ -264,12 +264,19 @@ does: [Development](development.md#adding-a-formatter-or-linter).
 
 ## In CI
 
-CI fetches the command of a pinned release and fails the build on exit code `1`:
+CI fetches the command of a pinned release, checks it against the release's `SHA256SUMS`, and fails the build on exit
+code `1`:
 
 ```bash
-curl -fsSL https://github.com/vertyll/markright/releases/download/v0.1.0/markright-x86_64-unknown-linux-gnu.tar.gz | tar -xz
+version=v0.1.0
+target=x86_64-unknown-linux-gnu
+base=https://github.com/vertyll/markright/releases/download/$version
+curl -fsSLO "$base/markright-$target.tar.gz"
+curl -fsSL "$base/SHA256SUMS" | grep "markright-$target.tar.gz" | sha256sum -c -
+tar -xzf "markright-$target.tar.gz"
 ./markright check
 ```
 
-Each release has an archive for every system it is built for, named after its target; the list is in
-[Development](development.md#releasing).
+In a GitHub Actions workflow, those lines are the `run` of one step, after `actions/checkout`. To move to a newer
+release, raise `version`. Each release has an archive for every system it is built for, named after its target; the
+list is in [Development](development.md#releasing).

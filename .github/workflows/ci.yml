@@ -181,6 +181,8 @@ jobs:
       - name: Download the archives
         uses: actions/download-artifact@v8
         with:
+          # Only the archives: the run also holds the site's artifact, which is no part of the release.
+          pattern: markright-*
           path: dist
           merge-multiple: true
 

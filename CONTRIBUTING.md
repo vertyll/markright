@@ -15,7 +15,8 @@ says how the code is built, checked and released.
 
 ## Making the change
 
-1. Fork the repository and branch from `main`.
+1. Branch from `main`, in a fork or, with write access, in the repository itself. Name the branch after the change,
+   its type first: `feat/list-indent`, `fix/anchors-in-tables`, `docs/configuration-examples`.
 2. Make the change with its tests. A new formatter or linter follows
    [Development: Adding a formatter or linter](docs/development.md#adding-a-formatter-or-linter).
 3. Update the documents the change touches: a new term goes in [GLOSSARY.md](GLOSSARY.md), a new document in
@@ -44,7 +45,12 @@ what the commit does, in the imperative and in lower case.
 | `build`    | the toolchain, dependencies, scripts and CI        |
 
 A change that breaks configurations that work today adds `!` after the type, as `feat!:`, and says what to change in
-its body. A pull request does one thing, says why, and passes CI before it is reviewed.
+its body.
+
+Every change reaches `main` through a pull request, the maintainers' own included; `main` takes no direct pushes. A
+pull request does one thing, says why, and needs the `Check` and `Site` jobs of CI to pass before it is merged. It is
+squash-merged, so its title, written as a commit message above, becomes the one commit on `main` and the line of the
+release notes that names the change.
 
 ## License
 

@@ -5,3 +5,6 @@ default = "all"
 
 [formatters]
 default = "all"
+
+[linters.exclusions]
+paths = ['^\.github/']

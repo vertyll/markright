@@ -63,7 +63,14 @@ pub(crate) fn print(root: &Path, package: &str, target: &str) -> io::Result<()> 
 	let tree = String::from_utf8(tree).map_err(io::Error::other)?;
 	let metadata: Metadata = serde_json::from_slice(&cargo(root, &["metadata", "--format-version", "1", "--locked"])?)
 		.map_err(io::Error::other)?;
-	print!("{}", notice(&metadata, &included(&tree), package, target)?);
+	let rustc = std::env::var("RUSTC").unwrap_or_else(|_| "rustc".to_owned());
+	let output = Command::new(rustc).current_dir(root).arg("-vV").output()?;
+	let version = String::from_utf8(output.stdout).map_err(io::Error::other)?;
+	print!(
+		"{}{}",
+		notice(&metadata, &included(&tree), package, target)?,
+		standard_library(&version)
+	);
 	Ok(())
 }
 
@@ -135,7 +142,14 @@ fn standard_texts(krate: &Package) -> String {
 		"\nThe package holds no license file; the standard text of each license it names follows.\nCopyright (c) \
 		 {authors}\n"
 	);
-	for id in spdx_ids(krate.license.as_deref().unwrap_or_default()) {
+	text.push_str(&license_texts(krate.license.as_deref().unwrap_or_default()));
+	text
+}
+
+/// The standard text of each license `expression` names, or a link to the text of one this file does not hold.
+fn license_texts(expression: &str) -> String {
+	let mut text = String::new();
+	for id in spdx_ids(expression) {
 		match TEXTS.iter().find(|&&(known, _)| known == id) {
 			Some((_, standard)) => {
 				let _ = write!(text, "\n--- {id} ---\n\n{}\n", standard.trim_end());
@@ -145,6 +159,27 @@ fn standard_texts(krate: &Package) -> String {
 			}
 		}
 	}
+	text
+}
+
+/// The entry of the Rust standard library, which every Rust program includes though no `cargo tree` lists it, for the
+/// compiler that `rustc -vV` describes as `version`. The crates it is built from are listed, with their licenses, in
+/// the COPYRIGHT file of that compiler's source.
+fn standard_library(version: &str) -> String {
+	let field = |name: &str| {
+		version
+			.lines()
+			.find_map(|line| line.strip_prefix(name)?.strip_prefix(": "))
+			.unwrap_or("unknown")
+	};
+	let (release, commit) = (field("release"), field("commit-hash"));
+	let mut text = format!(
+		"\n{}\nRust standard library {release}\nLicense: MIT OR Apache-2.0\nSource: https://github.com/rust-lang/rust\n\nEvery \
+		 Rust program includes it. Copyright (c) The Rust Project Developers. The crates it is built from, with their \
+		 licenses, are listed in https://github.com/rust-lang/rust/blob/{commit}/COPYRIGHT\n",
+		"=".repeat(80)
+	);
+	text.push_str(&license_texts("MIT OR Apache-2.0"));
 	text
 }
 
@@ -181,7 +216,21 @@ fn license_files(krate: &Package) -> io::Result<BTreeMap<String, String>> {
 mod tests {
 	use std::path::PathBuf;
 
-	use super::{Package, included, spdx_ids, standard_texts};
+	use super::{Package, included, spdx_ids, standard_library, standard_texts};
+
+	#[test]
+	fn the_standard_library_is_listed_for_the_compiler_in_use() {
+		let text = standard_library("rustc 1.99.0 (b940084d7 2026-09-28)\ncommit-hash: b940084d7\nrelease: 1.99.0\n");
+		assert!(
+			text.contains("Rust standard library 1.99.0\nLicense: MIT OR Apache-2.0"),
+			"{text}"
+		);
+		assert!(text.contains("rust-lang/rust/blob/b940084d7/COPYRIGHT"), "{text}");
+		assert!(
+			text.contains("--- Apache-2.0 ---") && text.contains("--- MIT ---"),
+			"{text}"
+		);
+	}
 
 	#[test]
 	fn a_package_without_license_files_gets_its_authors_and_the_standard_texts() {

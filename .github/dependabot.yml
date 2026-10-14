@@ -1,0 +1,40 @@
+# Dependabot opens one pull request a week per ecosystem, with every update of it grouped, titled as a Conventional
+# Commit: "build(deps): bump ...". Security updates come as soon as an alert does.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      cargo:
+        patterns: ["*"]
+    ignore:
+      # The playground is built by wasm-bindgen-cli at the version CI pins with its checksum; the crate and the
+      # command move together, by hand.
+      - dependency-name: wasm-bindgen
+
+  - package-ecosystem: npm
+    directory: /site/assets
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      npm:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      actions:
+        patterns: ["*"]

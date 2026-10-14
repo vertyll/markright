@@ -96,6 +96,7 @@ keep one. The rest is in [Configuration](docs/configuration.md), and every forma
 - [Glossary](GLOSSARY.md) – every term the docs use, and where it is explained.
 - [Standards](STANDARDS.md) – the specifications the tool follows.
 - [Contributing](CONTRIBUTING.md) – reporting a bug, proposing a rule, and sending a change.
+- [Security](SECURITY.md) – reporting a vulnerability privately.
 
 ## License
 

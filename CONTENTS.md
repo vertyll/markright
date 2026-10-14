@@ -20,6 +20,7 @@ Every document in this repository, the module it belongs to, and what it covers.
 | [Architecture](docs/architecture.md)   | —      | overview | One run from configuration to issues, and the crates and modules.                     |
 | [Development](docs/development.md)     | —      | overview | The checks, adding a formatter or linter and releasing a version.                     |
 | [Contributing](CONTRIBUTING.md)        | —      | overview | Reporting a bug, proposing a rule, and how commits and pull requests are written.     |
+| [Security](SECURITY.md)                | —      | overview | Which versions get fixes, and reporting a vulnerability privately.                    |
 
 ## Mechanisms
 

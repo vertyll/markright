@@ -98,12 +98,18 @@ site. Each archive is named `markright-<target>.tar.gz`, or `.zip` on Windows, a
 and `THIRD-PARTY-LICENSES.txt`, which `cargo xtask licenses` writes with the license of every crate built into it,
 the Rust standard library included; `SHA256SUMS` lists their checksums.
 
-| Target                      | System                              |
-|-----------------------------|-------------------------------------|
-| `x86_64-unknown-linux-gnu`  | Linux on x86-64, as most CI runners |
-| `aarch64-unknown-linux-gnu` | Linux on ARM64                      |
-| `aarch64-apple-darwin`      | macOS on Apple silicon              |
-| `x86_64-pc-windows-msvc`    | Windows on x86-64                   |
+| Target                       | System                                                           |
+|------------------------------|------------------------------------------------------------------|
+| `x86_64-unknown-linux-gnu`   | Linux on x86-64, as most CI runners                              |
+| `x86_64-unknown-linux-musl`  | Linux on x86-64, linked statically: any distribution, Alpine too |
+| `aarch64-unknown-linux-gnu`  | Linux on ARM64                                                   |
+| `aarch64-unknown-linux-musl` | Linux on ARM64, linked statically: any distribution, Alpine too  |
+| `aarch64-apple-darwin`       | macOS on Apple silicon                                           |
+| `x86_64-apple-darwin`        | macOS on Intel                                                   |
+| `x86_64-pc-windows-msvc`     | Windows on x86-64                                                |
+
+Running CI by hand, from the Actions tab, builds every archive without releasing it, which tries a new target before a
+tag depends on it.
 
 > [!WARNING]
 >

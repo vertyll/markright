@@ -278,5 +278,5 @@ tar -xzf "markright-$target.tar.gz"
 ```
 
 In a GitHub Actions workflow, those lines are the `run` of one step, after `actions/checkout`. To move to a newer
-release, raise `version`. Each release has an archive for every system it is built for, named after its target; the
-list is in [Development](development.md#releasing).
+release, raise `version`. Each release has an archive for every system it is built for, named after its target; in a
+container without glibc, such as Alpine, take a `musl` one. The list is in [Development](development.md#releasing).

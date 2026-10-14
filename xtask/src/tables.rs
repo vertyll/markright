@@ -140,6 +140,8 @@ impl Table {
 
 /// The cells as one row of a Markdown table.
 fn row(cells: &[String]) -> String {
+	// GFM ends a cell at any `|` not escaped, also inside a code span.
+	let cells: Vec<String> = cells.iter().map(|cell| cell.replace('|', "\\|")).collect();
 	format!("| {} |", cells.join(" | "))
 }
 

@@ -9,11 +9,11 @@
 
 - **Formatters fix** tabs, trailing whitespace, how headings, lists, emphasis, code fences, horizontal rules and
   blockquotes are written, the numbers of ordered lists, the blank lines around blocks and in a row, URLs and spaces
-  in links, ASCII arrows, unaligned tables and the end of the file.
-- **Linters report** broken links and anchors, unused or reversed references, links that say nothing, malformed
-  alerts and blockquotes, code blocks left open, indented or without a language, missing, repeated or skipped
-  headings, emphasis in place of a heading, images without alternative text, table rows with extra cells, long lines
-  and documents missing from the index.
+  in links and code, ASCII arrows, tables without their outer pipes or unaligned, and the end of the file.
+- **Linters report** broken links and anchors, unused, repeated or reversed references, links that say nothing,
+  malformed alerts and blockquotes, code blocks left open, indented or without a language, missing, repeated or skipped
+  headings or headings that end like a sentence, emphasis in place of a heading, unevenly indented lists, images without
+  alternative text, table rows with extra cells, long lines and documents missing from the index.
 
 Every rule, with an example, is in [Rules](docs/rules.md). The documentation is also a site, with a playground that
 runs markright on a document in the browser: <https://vertyll.github.io/markright/>.

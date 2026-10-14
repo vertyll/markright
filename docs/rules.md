@@ -40,9 +40,11 @@ configuration or repository that cannot be read, or a run interrupted with Ctrl+
 | `ordered-list-numbers` | numbers the items of an ordered list one after the other, or alike when its settings say so |
 | `emphasis-marker`      | writes emphasis and strong emphasis with `*`, or the character its settings choose          |
 | `link-spacing`         | removes the spaces just inside the brackets of a link's text                                |
+| `code-span-spacing`    | removes the space just inside each backtick of a code span, which renders as nothing        |
 | `bare-urls`            | puts a URL written as plain text in angle brackets, which makes it a link in any renderer   |
 | `fence-marker`         | writes the fences of code blocks with backticks, or the character its settings choose       |
 | `horizontal-rule`      | writes a horizontal rule as `---`, or the style its settings choose                         |
+| `table-pipes`          | starts and ends every row of a table with a pipe                                            |
 | `tables`               | pads every column of a table to one width                                                   |
 | `heading-style`        | writes a heading underlined with `===` or `---` with `#` instead, on one line               |
 | `block-spacing`        | puts a blank line before and after every heading, list, fenced code block and table         |
@@ -87,6 +89,11 @@ written as two spaces.
   leaves a block that is never closed, or a backtick fence whose info string would hold a backtick.
 - `horizontal-rule` leaves a rule right under a line of text, or on the first line, as written when its style is
   `---`: there `---` would underline the text into a heading, or open front matter.
+- `code-span-spacing` removes a space only when the code has one on each side, which a renderer drops anyway; a
+  space on one side is part of the code, as in ` 9.`, and stays. Code that starts or ends with a backtick keeps
+  its spaces, as in `` ` `` for a backtick, and so does a span written over more than one line.
+- `table-pipes` runs before `tables`, which aligns only rows that start with `|`, and leaves a table in a blockquote
+  alone. A `|` escaped as `\|` at the end of a row is text, so the row still gets one.
 - `bare-urls` finds a URL as GFM does, without the punctuation that ends its sentence, and leaves URLs in links, code
   and HTML alone.
 
@@ -99,6 +106,7 @@ written as two spaces.
 | `links`                    | a relative link points to a file or directory inside the repository                                 |
 | `anchors`                  | a `#fragment` matches a heading of the target document                                              |
 | `unused-definitions`       | every reference definition is used by a reference link                                              |
+| `duplicate-definitions`    | a reference label is defined once; a renderer ignores every definition after the first              |
 | `reversed-links`           | a link is written `[text](target)`, not with its brackets swapped                                   |
 | `link-text`                | a link's text says where it leads, not one of the phrases its settings list, such as `here`         |
 | `alerts`                   | an alert tag is one of the allowed types and is followed by an empty `>` line                       |
@@ -112,7 +120,9 @@ written as two spaces.
 | `heading-increment`        | a heading is at most one level deeper than the heading before it                                    |
 | `heading-without-space`    | a line meant as a heading has a space after its `#`                                                 |
 | `duplicate-headings`       | no two headings of one section say the same, which would leave their anchors apart by a number only |
+| `heading-punctuation`      | a heading does not end with `.`, `,`, `;`, `:` or `!`                                               |
 | `emphasis-as-heading`      | a paragraph of emphasis alone is not used in place of a heading                                     |
+| `list-indent`              | the items of one list are indented alike                                                            |
 | `image-alt`                | an image has alternative text                                                                       |
 | `table-columns`            | a table row has no more cells than the header                                                       |
 | `line-length`              | a line is at most the configured number of characters                                               |
@@ -160,6 +170,11 @@ Linters see a document as it is after the formatters, and skip [code blocks](mec
   URL of 60 characters or more, none of which can be wrapped.
 - `first-heading` lets front matter and HTML, such as badges, come before the title. `single-title` reports every
   top-level heading after the first.
+- `heading-punctuation` lets a heading end with `?`, as a question that names a section of answers.
+- `list-indent` compares each item with the first of its list, and is satisfied when either the marker or the text
+  starts at the same column, so numbers aligned on the right, ` 9.` over `10.`, are fine.
+- `duplicate-definitions` reports every definition of a label after the first, which a renderer ignores, so a link
+  through that label leads where the first one points.
 - `duplicate-headings` compares headings of one section: those with the same nearest heading above them at a lower
   level. Two `## Setup` under different chapters are fine.
 - `heading-without-space` reports a line that starts with `#` and no space, which CommonMark reads as text.

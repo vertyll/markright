@@ -9,6 +9,7 @@ rust-version = "1.99"
 authors = ["Mikołaj Gawron <gawrmiko@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/vertyll/markright"
+homepage = "https://vertyll.github.io/markright/"
 
 [workspace.dependencies]
 markright-core = { path = "crates/markright-core", version = "0.1.0", default-features = false }

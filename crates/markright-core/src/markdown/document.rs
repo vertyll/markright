@@ -30,12 +30,16 @@ pub struct Document {
 	pub emphasis: Vec<Emphasis>,
 	/// The URLs written as plain text, outside any link, in order.
 	pub bare_urls: Vec<Span>,
+	/// The code spans written on one line, their backticks included, in order.
+	pub code_spans: Vec<Span>,
 	/// The tables, in order.
 	pub tables: Vec<Table>,
 	/// The inline links and images, in the order they start, then the reference definitions.
 	pub links: Vec<Link>,
 	/// The reference definitions, by normalized label; the first of a repeated label wins, as it does in the parse.
 	pub definitions: BTreeMap<String, Definition>,
+	/// The reference definitions whose label an earlier definition already has, which the parse ignores.
+	pub duplicate_definitions: Vec<Reference>,
 	/// The normalized labels that reference links and images resolve through a definition.
 	pub used_labels: HashSet<String>,
 	/// The full and collapsed reference links, `[text][label]` and `[label][]`, whose label nothing defines.

@@ -12,6 +12,7 @@ mod bare_urls;
 mod blank_lines;
 mod block_spacing;
 mod blockquote_space;
+mod code_span_spacing;
 mod emphasis_marker;
 mod fence_marker;
 mod final_newline;
@@ -23,6 +24,7 @@ mod link_spacing;
 mod list_marker;
 mod list_marker_space;
 mod ordered_list_numbers;
+mod table_pipes;
 mod tables;
 mod trailing_whitespace;
 
@@ -45,9 +47,11 @@ pub static ALL: &[&dyn Formatter] = &[
 	&ordered_list_numbers::OrderedListNumbers,
 	&emphasis_marker::EmphasisMarker,
 	&link_spacing::LinkSpacing,
+	&code_span_spacing::CodeSpanSpacing,
 	&bare_urls::BareUrls,
 	&fence_marker::FenceMarker,
 	&horizontal_rule::HorizontalRule,
+	&table_pipes::TablePipes,
 	&tables::Tables,
 	&heading_style::HeadingStyle,
 	&block_spacing::BlockSpacing,

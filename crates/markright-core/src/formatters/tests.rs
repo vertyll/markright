@@ -3,9 +3,9 @@ use proptest::prelude::*;
 use super::settings::{self, Settings};
 use super::width::display_width;
 use super::{
-	ALL, Fix, Formatter, arrows, bare_urls, blank_lines, block_spacing, blockquote_space, emphasis_marker,
-	fence_marker, final_newline, hard_tabs, heading_spacing, heading_style, horizontal_rule, link_spacing, list_marker,
-	list_marker_space, ordered_list_numbers, tables, trailing_whitespace,
+	ALL, Fix, Formatter, arrows, bare_urls, blank_lines, block_spacing, blockquote_space, code_span_spacing,
+	emphasis_marker, fence_marker, final_newline, hard_tabs, heading_spacing, heading_style, horizontal_rule,
+	link_spacing, list_marker, list_marker_space, ordered_list_numbers, table_pipes, tables, trailing_whitespace,
 };
 use crate::markdown::Marker;
 use crate::markdown::{Document, table_cells};
@@ -467,6 +467,42 @@ fn block_spacing() {
 }
 
 #[test]
+fn code_span_spacing() {
+	check_cases(
+		&code_span_spacing::CodeSpanSpacing,
+		&[
+			("` a `", "`a`"),
+			("`` a b ``", "``a b``"),
+			("`a `", "`a `"),
+			("` 9.`", "` 9.`"),
+			("`  a  `", "`  a  `"),
+			("`` ` ``", "`` ` ``"),
+			("` `", "` `"),
+			("`   `", "`   `"),
+			("`a` and ` b `", "`a` and `b`"),
+			("```\n` a `\n```", "```\n` a `\n```"),
+			("x ` a\nb `", "x ` a\nb `"),
+		],
+	);
+}
+
+#[test]
+fn table_pipes() {
+	check_cases(
+		&table_pipes::TablePipes,
+		&[
+			("a | b\n--- | ---\nc | d", "| a | b |\n| --- | --- |\n| c | d |"),
+			("| a | b |\n|---|---|\n| c | d |", "| a | b |\n|---|---|\n| c | d |"),
+			("a | b \\|\n--- | ---", "| a | b \\| |\n| --- | --- |"),
+			("> a | b\n> --- | ---", "> a | b\n> --- | ---"),
+			("- x\n\n  a | b\n  --- | ---", "- x\n\n  | a | b |\n  | --- | --- |"),
+			("a | b\n--- | ---\nlazy", "| a | b |\n| --- | --- |\n| lazy |"),
+			("text | not a table", "text | not a table"),
+		],
+	);
+}
+
+#[test]
 fn registry() {
 	let names = super::names();
 	assert_eq!(
@@ -482,9 +518,11 @@ fn registry() {
 			"ordered-list-numbers",
 			"emphasis-marker",
 			"link-spacing",
+			"code-span-spacing",
 			"bare-urls",
 			"fence-marker",
 			"horizontal-rule",
+			"table-pipes",
 			"tables",
 			"heading-style",
 			"block-spacing",
@@ -557,6 +595,8 @@ const PIECES: &[&str] = &[
 	"text\n# H\ntext",
 	"| a |\n|---|\nafter",
 	"Name:\tvalue",
+	"a | b\n--- | ---\nc | d \\|",
+	"x ` y ` and `` ` `` and ` `",
 ];
 
 /// The formatters that change what a document says, not only how it is written: they are left out of the check that

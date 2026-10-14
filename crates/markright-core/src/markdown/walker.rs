@@ -25,6 +25,12 @@ const OPTIONS: Options = Options::ENABLE_TABLES
 /// A URL with a scheme, as GFM finds one in plain text, before its trailing punctuation is cut off.
 static URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://[^\s<>`]+").expect("the URL pattern is valid"));
 
+/// A line that starts a reference definition, after any blockquote markers and the marker of a list item: its label.
+static DEFINITION: LazyLock<Regex> = LazyLock::new(|| {
+	Regex::new(r"^[ \t>]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+[ \t>]*)?\[((?:[^\[\]\\]|\\.)+)\]:")
+		.expect("the definition pattern is valid")
+});
+
 /// Parses `content` into a document.
 pub(super) fn parse(content: &str) -> Document {
 	let index = LineIndex::new(content);
@@ -117,6 +123,7 @@ struct Walker<'a> {
 	fences: Vec<Fence>,
 	items: Vec<ListItem>,
 	emphasis: Vec<Emphasis>,
+	code_spans: Vec<Span>,
 	/// The stretches of prose outside links, each as long as the text events that follow one another make it.
 	prose: Vec<Range<usize>>,
 	tables: Vec<Table>,
@@ -152,6 +159,7 @@ impl<'a> Walker<'a> {
 			fences: Vec::new(),
 			items: Vec::new(),
 			emphasis: Vec::new(),
+			code_spans: Vec::new(),
 			prose: Vec::new(),
 			tables: Vec::new(),
 			links: Vec::new(),
@@ -179,6 +187,9 @@ impl<'a> Walker<'a> {
 			Event::Code(code) => {
 				self.text(&code, &range);
 				self.protect_code(&range);
+				if let Some(span) = self.span(range) {
+					self.code_spans.push(span);
+				}
 			}
 			Event::InlineHtml(html) => {
 				self.touch(&range);
@@ -493,7 +504,10 @@ impl<'a> Walker<'a> {
 		let Some(&OpenList { ordered, index }) = self.open_lists.last() else {
 			return;
 		};
-		let text = &self.source[range.start..];
+		// The parser starts an item where its line's indentation does, when the item is indented less than its text.
+		let indent = self.source[range.start..].bytes().take_while(|&b| b == b' ').count();
+		let start = range.start + indent;
+		let text = &self.source[start..];
 		let marker = if ordered {
 			let digits = text.bytes().take_while(u8::is_ascii_digit).count();
 			let delimiter = text[digits..].chars().next();
@@ -515,7 +529,7 @@ impl<'a> Walker<'a> {
 		self.items.push(ListItem {
 			line: first + 1,
 			last_line: last + 1,
-			column: self.index.column(range.start),
+			column: self.index.column(start),
 			marker,
 			spaces: text[marker.width()..].bytes().take_while(|&b| b == b' ').count(),
 			list: index,
@@ -607,6 +621,7 @@ impl<'a> Walker<'a> {
 			definitions.entry(label.clone()).or_insert(definition);
 		}
 		let spans: Vec<&Range<usize>> = written.iter().map(|definition| &definition.span).collect();
+		let duplicate_definitions = self.duplicate_definitions(&spans, &definitions);
 		let items = self.mark_adjacent(&spans);
 		let bare_urls = self.bare_urls();
 		self.links.sort_by_key(|(start, _)| *start);
@@ -639,14 +654,45 @@ impl<'a> Walker<'a> {
 			items,
 			emphasis: self.emphasis,
 			bare_urls,
+			code_spans: self.code_spans,
 			tables: self.tables,
 			links: all_links,
 			definitions,
+			duplicate_definitions,
 			used_labels: self.used_labels,
 			undefined_references,
 			lazy_lines: self.lazy_lines,
 			unclosed_fence: self.unclosed_fence,
 		}
+	}
+
+	/// The definitions the parser drops, since an earlier one has their label: it gives no event for them, so they are
+	/// the lines outside every block but containers, and outside every definition it kept, written as a definition
+	/// of a label it knows.
+	fn duplicate_definitions(&self, kept: &[&Range<usize>], known: &BTreeMap<String, Definition>) -> Vec<Reference> {
+		let mut covered = vec![false; self.index.count()];
+		let leaves = self
+			.blocks
+			.iter()
+			.filter(|block| !matches!(block.kind, BlockKind::List | BlockKind::BlockQuote));
+		for block in leaves {
+			covered[block.first - 1..block.last].fill(true);
+		}
+		for span in kept {
+			let (first, last) = self.span_lines(span);
+			covered[first..=last].fill(true);
+		}
+		self.source
+			.split('\n')
+			.enumerate()
+			.filter(|&(index, _)| !covered[index] && !self.code[index])
+			.filter_map(|(index, text)| {
+				let label = normalize_label(DEFINITION.captures(text)?.get(1)?.as_str());
+				known
+					.contains_key(&label)
+					.then_some(Reference { label, line: index + 1 })
+			})
+			.collect()
 	}
 
 	/// The URLs written as plain text in the prose, each without the punctuation that ends its sentence, as GFM finds

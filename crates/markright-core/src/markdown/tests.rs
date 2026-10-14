@@ -518,3 +518,10 @@ fn check_positions(content: &str) {
 		);
 	}
 }
+
+#[test]
+fn an_item_indented_less_than_its_text_is_found() {
+	let d = Document::parse("- one\n - two\n  3. three\n");
+	let found: Vec<(usize, usize)> = d.items.iter().map(|item| (item.line, item.column)).collect();
+	assert_eq!(found, [(1, 0), (2, 1), (3, 2)]);
+}

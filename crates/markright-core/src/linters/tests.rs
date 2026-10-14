@@ -5,8 +5,10 @@ use std::sync::Mutex;
 
 use super::settings::{Index, LineLength};
 use super::{
-	ALL, Context, Kind, Linter, Repo, Settings, alerts, anchors, blockquotes, fence_language, fences,
-	heading_increment, image_alt, index, line_length, links, readme_links, table_columns, unused_definitions,
+	ALL, Context, Kind, Linter, Repo, Settings, alerts, anchors, blank_line_in_blockquote, blockquotes,
+	code_block_style, duplicate_definitions, duplicate_headings, emphasis_as_heading, fence_language, fences,
+	first_heading, heading_increment, heading_punctuation, heading_without_space, image_alt, index, line_length,
+	link_text, links, list_indent, readme_links, reversed_links, single_title, table_columns, unused_definitions,
 };
 use crate::fs::{Files, is_markdown};
 use crate::markdown::Document;
@@ -367,6 +369,187 @@ fn unused_definitions() {
 		"a.md",
 	);
 	assert_eq!(found, ["a.md:7: unused definition: [unused]"]);
+}
+
+/// Checks that `linter` reports, in each document alone in a repository, the lines its case lists.
+fn check_lines(linter: Linter, cases: &[(&str, &[usize])]) {
+	for (text, want) in cases {
+		let f = files(&[("a.md", text)]);
+		let mut lines: Vec<usize> = found(linter, &repo(&f), "a.md")
+			.iter()
+			.map(|issue| {
+				issue
+					.split(':')
+					.nth(1)
+					.and_then(|line| line.parse().ok())
+					.expect("an issue has a line")
+			})
+			.collect();
+		lines.sort_unstable();
+		assert_eq!(lines, *want, "{} on {text:?}", linter.about().name);
+	}
+}
+
+#[test]
+fn duplicate_definitions() {
+	check_lines(
+		Linter::document(&duplicate_definitions::DuplicateDefinitions),
+		&[
+			("[a]: x\n[a]: y\n", &[2]),
+			("[a]: x\n[A]: y\n", &[2]),
+			("[a]: x\n[b]: y\n", &[]),
+			("[a]: x\n\n> [a]: y\n", &[3]),
+			("[a]: x\n\n- [a]: y\n", &[3]),
+			("[a]: x\n\n```\n[a]: y\n```\n", &[]),
+			("[a]: x\n\ntext\n[a]: y\n", &[]),
+			("[a]: x\n\n    [a]: y\n", &[]),
+		],
+	);
+	let f = files(&[("a.md", "[a]: x\n[a]: y\n")]);
+	let found = found(
+		Linter::document(&duplicate_definitions::DuplicateDefinitions),
+		&repo(&f),
+		"a.md",
+	);
+	assert_eq!(found, ["a.md:2: [a] is already defined on line 1"]);
+}
+
+#[test]
+fn heading_punctuation() {
+	check_lines(
+		Linter::document(&heading_punctuation::HeadingPunctuation),
+		&[
+			("# A.\n", &[1]),
+			("# A?\n", &[]),
+			("# A\n\n## B:\n", &[3]),
+			("A!\n===\n", &[1]),
+			("# Q：\n", &[1]),
+			("# Café\n", &[]),
+			("```\n# x.\n```\n", &[]),
+		],
+	);
+}
+
+#[test]
+fn list_indent() {
+	check_lines(
+		Linter::document(&list_indent::ListIndent),
+		&[
+			("- a\n - b\n", &[2]),
+			("- a\n- b\n", &[]),
+			(" 9. a\n10. b\n", &[]),
+			("1. a\n10. b\n", &[]),
+			("- a\n\n  - b\n  - c\n", &[]),
+			("- a\n  - b\n   - c\n", &[3]),
+			("> - a\n>  - b\n", &[2]),
+		],
+	);
+}
+
+#[test]
+fn reversed_links() {
+	check_lines(
+		Linter::document(&reversed_links::ReversedLinks),
+		&[
+			("(text)[a.md]\n", &[1]),
+			("(text)[ref]\n\n[ref]: a.md\n", &[]),
+			("`(text)[a.md]`\n", &[]),
+			("[text](a.md)\n", &[]),
+		],
+	);
+}
+
+#[test]
+fn link_text() {
+	check_lines(
+		Linter::document(&link_text::LinkText),
+		&[
+			("[here](a.md)\n", &[1]),
+			("[Click here!](a.md)\n", &[1]),
+			("[the guide](a.md)\n", &[]),
+		],
+	);
+}
+
+#[test]
+fn blank_line_in_blockquote() {
+	check_lines(
+		Linter::document(&blank_line_in_blockquote::BlankLineInBlockquote),
+		&[
+			("> a\n\n> b\n", &[2]),
+			("> a\n>\n> b\n", &[]),
+			("> [!NOTE]\n> a\n\n> [!TIP]\n> b\n", &[]),
+			("> a\n\ntext\n\n> b\n", &[]),
+		],
+	);
+}
+
+#[test]
+fn code_block_style() {
+	check_lines(
+		Linter::document(&code_block_style::CodeBlockStyle),
+		&[
+			("text\n\n    code\n", &[3]),
+			("```\ncode\n```\n", &[]),
+			("- a\n\n      code\n", &[3]),
+		],
+	);
+}
+
+#[test]
+fn first_heading() {
+	check_lines(
+		Linter::document(&first_heading::FirstHeading),
+		&[
+			("# A\n", &[]),
+			("## A\n", &[1]),
+			("---\nt: x\n---\n# A\n", &[]),
+			("<p>badge</p>\n\n# A\n", &[]),
+			("text\n\n# A\n", &[1]),
+			("", &[]),
+		],
+	);
+}
+
+#[test]
+fn single_title() {
+	check_lines(
+		Linter::document(&single_title::SingleTitle),
+		&[("# A\n\n# B\n", &[3]), ("# A\n\n## B\n", &[])],
+	);
+}
+
+#[test]
+fn heading_without_space() {
+	check_lines(
+		Linter::document(&heading_without_space::HeadingWithoutSpace),
+		&[("#Title\n", &[1]), ("# Title\n", &[]), ("```\n#x\n```\n", &[])],
+	);
+}
+
+#[test]
+fn duplicate_headings() {
+	check_lines(
+		Linter::document(&duplicate_headings::DuplicateHeadings),
+		&[
+			("# A\n\n## S\n\n### X\n\n## T\n\n### X\n", &[]),
+			("# A\n\n## S\n\n## S\n", &[5]),
+			("# A\n\n## s\n\n## S\n", &[5]),
+		],
+	);
+}
+
+#[test]
+fn emphasis_as_heading() {
+	check_lines(
+		Linter::document(&emphasis_as_heading::EmphasisAsHeading),
+		&[
+			("**Setup**\n", &[1]),
+			("**Note:** text\n", &[]),
+			("**Done.**\n", &[]),
+			("- **x**\n", &[]),
+		],
+	);
 }
 
 #[test]

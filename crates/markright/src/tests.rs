@@ -84,7 +84,7 @@ fn lists_follow_the_configuration() {
 	fs::write(&config, "version: \"1\"\nlinters:\n  disable: [line-length]\n").unwrap();
 	let listed = call(&["linters", path(root.path())]);
 	let lines: Vec<&str> = listed.out.lines().collect();
-	assert_eq!((listed.code, lines.len()), (0, 22));
+	assert_eq!((listed.code, lines.len()), (0, 25));
 	assert_eq!(
 		lines[1],
 		"anchors              enabled   a #fragment matches a heading of the target document"

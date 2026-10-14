@@ -12,6 +12,8 @@ it marks are exactly the ones a CommonMark renderer shows as code or passes thro
   where the text of its list item or blockquote starts.
 - **HTML block:** starts with a line such as `<div>`, `<p align="center">` or `<!--`. It runs to its closing tag or
   to the next blank line, as CommonMark defines for each kind. Its `id` and `name` attributes still define anchors.
+- **Front matter:** YAML between two `---` lines, or TOML between two `+++` lines, starting on the first line of the
+  document. It is data for the tools that publish the document, so no rule reads it as Markdown.
 
 ```markdown
 1. An item.

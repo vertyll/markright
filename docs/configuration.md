@@ -75,6 +75,8 @@ linters:
       links: [CONTENTS.md, GLOSSARY.md, STANDARDS.md]
     alerts:
       types: [NOTE, TIP, IMPORTANT, WARNING, CAUTION]
+    link-text:
+      phrases: [click here, here, link, more, read more, this, this link]
   exclusions:
     warn-unused: true
     paths:
@@ -93,6 +95,14 @@ formatters:
   settings:
     list-marker:
       marker: "*"
+    ordered-list-numbers:
+      numbering: increasing
+    emphasis-marker:
+      marker: "*"
+    fence-marker:
+      marker: "`"
+    horizontal-rule:
+      style: "---"
   exclusions:
     warn-unused: true
     paths:
@@ -132,6 +142,9 @@ links = ["CONTENTS.md", "GLOSSARY.md", "STANDARDS.md"]
 [linters.settings.alerts]
 types = ["NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"]
 
+[linters.settings.link-text]
+phrases = ["click here", "here", "link", "more", "read more", "this", "this link"]
+
 [linters.exclusions]
 warn-unused = true
 paths = ['^generated/']
@@ -153,6 +166,18 @@ disable = ["tables"]
 [formatters.settings.list-marker]
 marker = "*"
 
+[formatters.settings.ordered-list-numbers]
+numbering = "increasing"
+
+[formatters.settings.emphasis-marker]
+marker = "*"
+
+[formatters.settings.fence-marker]
+marker = "`"
+
+[formatters.settings.horizontal-rule]
+style = "---"
+
 [formatters.exclusions]
 warn-unused = true
 paths = ['^CHANGELOG\.md$']
@@ -169,14 +194,19 @@ makes of each. The names are in [Rules](rules.md).
 
 <!-- markright:settings -->
 
-| Key                                      | Meaning                                         | Default                                          |
-|------------------------------------------|-------------------------------------------------|--------------------------------------------------|
-| `formatters.settings.list-marker.marker` | the marker of every item of an unordered list   | `-`                                              |
-| `linters.settings.alerts.types`          | allowed alert types                             | `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, `CAUTION` |
-| `linters.settings.line-length.max`       | the longest line allowed, in characters         | `120`                                            |
-| `linters.settings.index.file`            | the document that must link every other one     | `CONTENTS.md`                                    |
-| `linters.settings.readme-links.file`     | the README                                      | `README.md`                                      |
-| `linters.settings.readme-links.links`    | documents the README must link, when they exist | `CONTENTS.md`, `GLOSSARY.md`, `STANDARDS.md`     |
+| Key                                                  | Meaning                                                                                                            | Default                                                                |
+|------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| `formatters.settings.list-marker.marker`             | the marker of every item of an unordered list                                                                      | `-`                                                                    |
+| `formatters.settings.ordered-list-numbers.numbering` | how the items of an ordered list are numbered                                                                      | `increasing`                                                           |
+| `formatters.settings.emphasis-marker.marker`         | the character of emphasis and strong emphasis                                                                      | `*`                                                                    |
+| `formatters.settings.fence-marker.marker`            | the character of the fences of code blocks                                                                         | `` ` ``                                                                |
+| `formatters.settings.horizontal-rule.style`          | how a horizontal rule is written                                                                                   | `---`                                                                  |
+| `linters.settings.link-text.phrases`                 | the texts that say nothing about where a link leads, compared without case and without the punctuation around them | `click here`, `here`, `link`, `more`, `read more`, `this`, `this link` |
+| `linters.settings.alerts.types`                      | allowed alert types                                                                                                | `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, `CAUTION`                       |
+| `linters.settings.line-length.max`                   | the longest line allowed, in characters                                                                            | `120`                                                                  |
+| `linters.settings.index.file`                        | the document that must link every other one                                                                        | `CONTENTS.md`                                                          |
+| `linters.settings.readme-links.file`                 | the README                                                                                                         | `README.md`                                                            |
+| `linters.settings.readme-links.links`                | documents the README must link, when they exist                                                                    | `CONTENTS.md`, `GLOSSARY.md`, `STANDARDS.md`                           |
 
 <!-- /markright:settings -->
 

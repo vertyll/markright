@@ -44,8 +44,8 @@ fn path(p: &Path) -> &str {
 #[test]
 fn check_reports_and_fmt_fixes() {
 	let root = tempfile::tempdir().unwrap();
-	fs::write(root.path().join("a.md"), "a -> b\n").unwrap();
-	let report = "a.md:1: ASCII arrow or missing space around an arrow (arrows)\nmarkright: 1 issue(s)\n";
+	fs::write(root.path().join("a.md"), "# A\n\na -> b\n").unwrap();
+	let report = "a.md:3: ASCII arrow or missing space around an arrow (arrows)\nmarkright: 1 issue(s)\n";
 	assert_eq!(call(&["check", path(root.path())]), done(1, report, ""));
 	assert_eq!(
 		call(&["fmt", path(root.path())]),
@@ -55,21 +55,21 @@ fn check_reports_and_fmt_fixes() {
 		call(&["check", path(root.path())]),
 		done(0, "markright: 0 issues\n", "")
 	);
-	assert_eq!(fs::read_to_string(root.path().join("a.md")).unwrap(), "a → b\n");
+	assert_eq!(fs::read_to_string(root.path().join("a.md")).unwrap(), "# A\n\na → b\n");
 }
 
 #[test]
 fn check_fix_fixes_and_reports_the_rest() {
 	let root = tempfile::tempdir().unwrap();
-	fs::write(root.path().join("a.md"), "a -> b\n").unwrap();
-	fs::write(root.path().join("b.md"), "a -> [b](gone.md)\n").unwrap();
-	let report = "b.md:1: broken link: gone.md (links)\nmarkright: 1 issue(s)\n";
+	fs::write(root.path().join("a.md"), "# A\n\na -> b\n").unwrap();
+	fs::write(root.path().join("b.md"), "# B\n\na -> [b](gone.md)\n").unwrap();
+	let report = "b.md:3: broken link: gone.md (links)\nmarkright: 1 issue(s)\n";
 	assert_eq!(
 		call(&["check", "--fix", path(root.path())]),
 		done(1, report, "formatted a.md\nformatted b.md\n"),
 		"the fixed files go to the standard error, so the report on the standard output keeps its format"
 	);
-	assert_eq!(fs::read_to_string(root.path().join("a.md")).unwrap(), "a → b\n");
+	assert_eq!(fs::read_to_string(root.path().join("a.md")).unwrap(), "# A\n\na → b\n");
 	fs::remove_file(root.path().join("b.md")).unwrap();
 	assert_eq!(
 		call(&["check", "--fix", path(root.path())]),
@@ -84,18 +84,18 @@ fn lists_follow_the_configuration() {
 	fs::write(&config, "version: \"1\"\nlinters:\n  disable: [line-length]\n").unwrap();
 	let listed = call(&["linters", path(root.path())]);
 	let lines: Vec<&str> = listed.out.lines().collect();
-	assert_eq!((listed.code, lines.len()), (0, 13));
+	assert_eq!((listed.code, lines.len()), (0, 22));
 	assert_eq!(
 		lines[1],
 		"anchors              enabled   a #fragment matches a heading of the target document"
 	);
 	assert_eq!(
-		lines[10],
-		"line-length          disabled  a line is at most the configured number of characters"
+		lines.iter().find(|line| line.starts_with("line-length ")),
+		Some(&"line-length          disabled  a line is at most the configured number of characters")
 	);
 	let listed = call(&["formatters", "--config", path(&config)]);
 	assert_eq!(
-		listed.out.lines().nth(3),
+		listed.out.lines().find(|line| line.starts_with("tables ")),
 		Some("tables               enabled   pads every column of a table to one width")
 	);
 }
@@ -154,7 +154,7 @@ fn a_toml_configuration() {
 		"version = \"1\"\n\n[formatters]\ndisable = [\"arrows\"]\n",
 	)
 	.unwrap();
-	fs::write(root.path().join("a.md"), "a -> b\n").unwrap();
+	fs::write(root.path().join("a.md"), "# A\n\na -> b\n").unwrap();
 	assert_eq!(
 		call(&["check", path(root.path())]),
 		done(0, "markright: 0 issues\n", "")
@@ -177,8 +177,8 @@ fn output_formats_and_unused_warnings() {
 		path(&sarif)
 	);
 	fs::write(root.path().join(".markright.yaml"), config).unwrap();
-	fs::write(root.path().join("a.md"), "[x](gone.md)\n").unwrap();
-	let out = "a.md:1: broken link: gone.md (links)\nmarkright: 1 issue(s)\n";
+	fs::write(root.path().join("a.md"), "# A\n\n[x](gone.md)\n").unwrap();
+	let out = "a.md:3: broken link: gone.md (links)\nmarkright: 1 issue(s)\n";
 	let err = "markright: warning: linters.exclusions.paths[0]: \"^nothing/\" matches no document\n";
 	assert_eq!(call(&["check", path(root.path())]), done(1, out, err));
 	let log: serde_json::Value = serde_json::from_str(&fs::read_to_string(&sarif).unwrap()).unwrap();

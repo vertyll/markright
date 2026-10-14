@@ -23,9 +23,9 @@ here and in CI; `rustup install` fetches it. Raising it is a change of its own, 
 fails the checks. CI runs the same script on every push and pull request to `main`, and on every tag, with the
 WebAssembly target installed.
 
-Node runs the checks of the site's scripts and styles; the tools they need, TypeScript, esbuild and Biome, are pinned
-in `site/assets/package.json` and fetched by `npm ci`. `npm run format` in `site/assets` formats them as Biome
-expects.
+Node runs the checks of the site's scripts and styles; the tools they need, TypeScript, esbuild and Biome, and the
+Inter typeface the site is set in are pinned in `site/assets/package.json` and fetched by `npm ci`. `npm run format` in
+`site/assets` formats them as Biome expects.
 
 Every script in `scripts/` says at its top what it does, how to call it and what it needs. They are Bash, so the
 same file runs everywhere: on Windows, run them in Git Bash, which comes with Git, or in WSL.

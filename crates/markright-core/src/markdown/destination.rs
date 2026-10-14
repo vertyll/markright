@@ -3,9 +3,14 @@
 
 use std::ops::Range;
 
+/// Where the `]` that closes the text of the inline link whose text ends at `text_end` is.
+pub(super) fn closing_bracket(source: &str, text_end: usize) -> Option<usize> {
+	source[text_end..].find(']').map(|offset| text_end + offset)
+}
+
 /// The bytes of the destination of the inline link whose text ends at `text_end`, inside any angle brackets.
 pub(super) fn inline(source: &str, text_end: usize) -> Option<Range<usize>> {
-	let close = text_end + source[text_end..].find(']')?;
+	let close = closing_bracket(source, text_end)?;
 	if source.as_bytes().get(close + 1) != Some(&b'(') {
 		return None;
 	}

@@ -54,9 +54,10 @@ export function initSearch(): void {
       });
       const hits = search(await index, query);
       if (input.value !== query) return;
-      results.replaceChildren(...hits.map(result));
+      results.replaceChildren(...hits.map((hit, position) => result(hit, position)));
       select(0);
-      status.textContent = query.trim() === "" ? "" : hits.length === 0 ? `Nothing found for “${query.trim()}”` : "";
+      const nothing = query.trim() !== "" && hits.length === 0;
+      status.textContent = nothing ? `Nothing found for “${query.trim()}”` : "";
     } catch (error) {
       index = undefined;
       status.textContent = `The search could not load: ${error instanceof Error ? error.message : String(error)}`;

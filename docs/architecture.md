@@ -134,10 +134,11 @@ is written twice:
 
 The scripts in `site/assets/scripts`, TypeScript, add what a static page cannot do: the reader's settings, the search
 over the index Zola writes, the rule lists' filters, the wrap and copy buttons of code blocks and tables, and the
-playground. esbuild bundles the scripts into two files and the stylesheets into one, and Biome formats and lints
-both. The playground loads `crates/markright-wasm`, compiled to WebAssembly and bound to the page by
-wasm-bindgen, and runs the same `runner::check_documents` as everything else, so nothing leaves the browser.
-`cargo xtask site check` then follows every link of the built site, the templates' included, to a page and its
+playground. esbuild bundles the scripts into two files and the stylesheets into one, with the Inter typeface, and Biome
+formats and lints both. The site's `THIRD-PARTY-LICENSES.txt` holds the licenses of the typeface, of the icons and of
+every crate built into the playground. The playground loads `crates/markright-wasm`, compiled to WebAssembly and bound
+to the page by wasm-bindgen, and runs the same `runner::check_documents` as everything else, so nothing leaves the
+browser. `cargo xtask site check` then follows every link of the built site, the templates' included, to a page and its
 anchor.
 
 ## Registries

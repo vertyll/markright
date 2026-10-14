@@ -9,15 +9,24 @@ mod targets;
 // The linters, one per file.
 mod alerts;
 mod anchors;
+mod blank_line_in_blockquote;
 mod blockquotes;
+mod code_block_style;
+mod duplicate_headings;
+mod emphasis_as_heading;
 mod fence_language;
 mod fences;
+mod first_heading;
 mod heading_increment;
+mod heading_without_space;
 mod image_alt;
 mod index;
 mod line_length;
+mod link_text;
 mod links;
 mod readme_links;
+mod reversed_links;
+mod single_title;
 mod table_columns;
 mod unused_definitions;
 
@@ -39,11 +48,20 @@ pub static ALL: &[Linter] = &[
 	Linter::document(&links::Links),
 	Linter::document(&anchors::Anchors),
 	Linter::document(&unused_definitions::UnusedDefinitions),
+	Linter::document(&reversed_links::ReversedLinks),
+	Linter::document(&link_text::LinkText),
 	Linter::document(&alerts::Alerts),
 	Linter::document(&blockquotes::Blockquotes),
+	Linter::document(&blank_line_in_blockquote::BlankLineInBlockquote),
 	Linter::document(&fences::Fences),
 	Linter::document(&fence_language::FenceLanguage),
+	Linter::document(&code_block_style::CodeBlockStyle),
+	Linter::document(&first_heading::FirstHeading),
+	Linter::document(&single_title::SingleTitle),
 	Linter::document(&heading_increment::HeadingIncrement),
+	Linter::document(&heading_without_space::HeadingWithoutSpace),
+	Linter::document(&duplicate_headings::DuplicateHeadings),
+	Linter::document(&emphasis_as_heading::EmphasisAsHeading),
 	Linter::document(&image_alt::ImageAlt),
 	Linter::document(&table_columns::TableColumns),
 	Linter::document(&line_length::LineLength),

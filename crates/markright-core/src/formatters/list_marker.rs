@@ -2,7 +2,7 @@
 
 use super::{About, Fix, Formatter, Settings, by_line, texts};
 use crate::FIRST_RELEASE;
-use crate::markdown::Document;
+use crate::markdown::{Document, ItemMarker};
 
 pub(super) struct ListMarker;
 
@@ -20,13 +20,13 @@ impl Formatter for ListMarker {
 	fn apply(&self, document: &Document, settings: &Settings) -> Fix {
 		let marker = settings.list_marker.marker;
 		let mut out = texts(document);
-		for bullet in &document.bullets {
-			let i = bullet.line - 1;
-			if bullet.marker != marker && !bullet.adjacent && !document.lines[i].code {
-				out[i].replace_range(
-					bullet.column..bullet.column + bullet.marker.as_str().len(),
-					marker.as_str(),
-				);
+		for item in &document.items {
+			let ItemMarker::Bullet(written) = item.marker else {
+				continue;
+			};
+			let index = item.line - 1;
+			if written != marker && !item.adjacent && !document.lines[index].code {
+				out[index].replace_range(item.column..=item.column, marker.as_str());
 			}
 		}
 		by_line(&document.lines, out)

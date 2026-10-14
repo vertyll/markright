@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { excerpt, parseIndex, type SearchEntry, search, terms } from "../lib/search.ts";
+import { excerpt, parseIndex, type SearchEntry, score, search, terms } from "../lib/search.ts";
 
 const page = (title: string, body: string, description = ""): SearchEntry => ({
   url: `https://example.com/${title}/`,
@@ -61,4 +61,11 @@ test("an excerpt is the text around the first match, on one line", () => {
   assert.equal(cut.before.length, 61);
   assert.deepEqual(excerpt("Nothing here", "absent"), { before: "", match: "", after: "Nothing here" });
   assert.deepEqual(excerpt("Kept as It Was", "it"), { before: "Kept as ", match: "It", after: " Was" });
+});
+
+test("score weighs the title, the description and the text, and is 0 when a word is missing", () => {
+  const entry = page("arrows", "arrows arrows", "turns arrows into characters");
+  assert.equal(score(entry, ["arrows"]), 20 + 10 + 4 + 2);
+  assert.equal(score(entry, ["characters"]), 4);
+  assert.equal(score(entry, ["arrows", "missing"]), 0);
 });

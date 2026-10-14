@@ -34,6 +34,8 @@ unicode-properties.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
+# The HTML a document renders to, which the formatters' tests compare before and after.
+pulldown-cmark = { workspace = true, features = ["html"] }
 tempfile.workspace = true
 
 [lints]

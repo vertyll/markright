@@ -356,7 +356,7 @@ fn toml_errors_name_the_line() {
 		(
 			"version = \"1\"\n\n[linters.settings.nope]\n",
 			3,
-			"unknown field `nope`, expected one of `line-length`, `index`, `readme-links`, `alerts`",
+			"unknown field `nope`, expected one of `line-length`, `index`, `readme-links`, `alerts`, `link-text`",
 		),
 		("version = \"1\"\nlinters = [\n", 2, "unclosed array, expected `]`"),
 		("version = 1\n", 1, "invalid type: integer `1`, expected a string"),

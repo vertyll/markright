@@ -23,5 +23,7 @@ site/public/
 site/static/js/
 site/static/wasm/
 site/static/markright.css
+site/static/fonts/
+site/static/THIRD-PARTY-LICENSES.txt
 site/assets/node_modules/
 site/assets/lcov.info

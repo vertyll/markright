@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Builds the documentation site: writes its pages from the repository into site/content, compiles the playground to
-# WebAssembly with the licenses of what it includes, bundles the site's scripts and styles, then runs Zola in site/
-# with the arguments given. When it serves, esbuild rebundles the scripts and styles on every change.
+# WebAssembly, bundles the site's scripts, styles and typeface, gathers the licenses of what the site includes, then
+# runs Zola in site/ with the arguments given. When it serves, esbuild rebundles the scripts and styles on every
+# change.
 #
 # Usage: bash scripts/site.sh          the same as serve
 #        bash scripts/site.sh serve    serve it at http://127.0.0.1:1111/, rebuilt on every change of site/
@@ -46,8 +47,16 @@ cargo build --release --locked --package markright-wasm --target wasm32-unknown-
 rm -rf site/static/wasm
 wasm-bindgen --target web --no-typescript --out-dir site/static/wasm \
   target/wasm32-unknown-unknown/release/markright_wasm.wasm
-cargo xtask licenses markright-wasm wasm32-unknown-unknown > site/static/wasm/THIRD-PARTY-LICENSES.txt
 (cd site/assets && npm ci --ignore-scripts --no-audit --no-fund && npm run build)
+{
+  echo "The site includes the Inter typeface, the Heroicons icons and, in its playground, the crates below."
+  printf '\n%s\nInter, by @fontsource-variable/inter\n\n' "$(printf '=%.0s' {1..80})"
+  cat site/assets/node_modules/@fontsource-variable/inter/LICENSE
+  printf '\n%s\n' "$(printf '=%.0s' {1..80})"
+  cat site/assets/licenses/heroicons.txt
+  echo
+  cargo xtask licenses markright-wasm wasm32-unknown-unknown
+} > site/static/THIRD-PARTY-LICENSES.txt
 cd site
 if [ "$1" = build ]; then
   exec zola "$@"

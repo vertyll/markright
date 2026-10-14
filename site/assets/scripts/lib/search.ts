@@ -63,28 +63,34 @@ export function excerpt(body: string, term: string): Excerpt {
 }
 
 /**
- * The pages that hold every word of the query, best first: a word in the title counts most, then in the description,
- * then each time it is in the text. At most limit of them.
+ * How well entry matches words, all in lower case: a word in the title counts most, then in the description, then
+ * each time it is in the text, up to ten times. 0 when a word is nowhere.
  */
+export function score(entry: SearchEntry, words: readonly string[]): number {
+  const title = entry.title.toLowerCase();
+  const description = entry.description.toLowerCase();
+  const body = entry.body.toLowerCase();
+  let total = 0;
+  for (const word of words) {
+    const inBody = occurrences(body, word);
+    const inTitle = title.includes(word);
+    const inDescription = description.includes(word);
+    if (!inTitle && !inDescription && inBody === 0) return 0;
+    if (title === word) total += 20;
+    if (inTitle) total += 10;
+    if (inDescription) total += 4;
+    total += Math.min(inBody, 10);
+  }
+  return total;
+}
+
+/** The pages that hold every word of the query, best first, at most limit of them. */
 export function search(entries: readonly SearchEntry[], query: string, limit = 10): SearchHit[] {
   const words = terms(query);
   if (words.length === 0) return [];
-  const hits: SearchHit[] = [];
-  for (const entry of entries) {
-    const title = entry.title.toLowerCase();
-    const description = entry.description.toLowerCase();
-    const body = entry.body.toLowerCase();
-    let score = 0;
-    for (const word of words) {
-      const inBody = occurrences(body, word);
-      if (!title.includes(word) && !description.includes(word) && inBody === 0) {
-        score = 0;
-        break;
-      }
-      score += (title === word ? 20 : 0) + (title.includes(word) ? 10 : 0) + (description.includes(word) ? 4 : 0);
-      score += Math.min(inBody, 10);
-    }
-    if (score > 0) hits.push({ entry, score, excerpt: excerpt(entry.body, words[0] ?? "") });
-  }
-  return hits.sort((a, b) => b.score - a.score).slice(0, limit);
+  const hits = entries
+    .map((entry) => ({ entry, score: score(entry, words) }))
+    .filter((hit) => hit.score > 0)
+    .map((hit) => ({ ...hit, excerpt: excerpt(hit.entry.body, words[0] ?? "") }));
+  return hits.toSorted((a, b) => b.score - a.score).slice(0, limit);
 }

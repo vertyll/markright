@@ -2,21 +2,28 @@
 
 use std::collections::{BTreeMap, HashSet};
 use std::ops::Range;
+use std::sync::LazyLock;
 
 use pulldown_cmark::{BrokenLink, CodeBlockKind, Event, LinkType, Options, Parser, Tag, TagEnd};
+use regex::Regex;
 
 use super::anchors::Anchors;
 use super::lines::LineIndex;
 use super::{
-	Bullet, Definition, Document, Fence, Heading, Line, Link, LinkKind, Marker, Reference, Table, destination,
-	normalize_label,
+	Block, BlockKind, Definition, Document, Emphasis, Fence, Heading, ItemMarker, Line, Link, LinkKind, ListItem,
+	Marker, Reference, Span, Table, destination, normalize_label,
 };
 
-/// The extensions GFM adds that change what a document holds: tables, strikethrough and task lists. Alerts are left
-/// to the alerts linter, which needs to see their tags.
+/// The extensions GFM adds that change what a document holds: tables, strikethrough and task lists; and front matter,
+/// which no rule reads as Markdown. Alerts are left to the alerts linter, which needs to see their tags.
 const OPTIONS: Options = Options::ENABLE_TABLES
 	.union(Options::ENABLE_STRIKETHROUGH)
-	.union(Options::ENABLE_TASKLISTS);
+	.union(Options::ENABLE_TASKLISTS)
+	.union(Options::ENABLE_YAML_STYLE_METADATA_BLOCKS)
+	.union(Options::ENABLE_PLUSES_DELIMITED_METADATA_BLOCKS);
+
+/// A URL with a scheme, as GFM finds one in plain text, before its trailing punctuation is cut off.
+static URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://[^\s<>`]+").expect("the URL pattern is valid"));
 
 /// Parses `content` into a document.
 pub(super) fn parse(content: &str) -> Document {
@@ -82,6 +89,7 @@ enum Purpose {
 	Heading {
 		level: u8,
 		line: usize,
+		underline: Option<usize>,
 	},
 	Link {
 		target: String,
@@ -100,10 +108,17 @@ struct Walker<'a> {
 	anchors: Anchors,
 	code: Vec<bool>,
 	protected: Vec<Vec<Range<usize>>>,
+	blocks: Vec<Block>,
+	/// How many lists, list items and blockquotes are open.
+	containers: usize,
+	/// Whether the walk is inside a code block, an HTML block or front matter, whose text is not prose.
+	literal: bool,
 	headings: Vec<Heading>,
 	fences: Vec<Fence>,
-	/// Each bullet, with the index of its list.
-	bullets: Vec<(Bullet, usize)>,
+	items: Vec<ListItem>,
+	emphasis: Vec<Emphasis>,
+	/// The stretches of prose outside links, each as long as the text events that follow one another make it.
+	prose: Vec<Range<usize>>,
 	tables: Vec<Table>,
 	/// Each inline link and image, with the offset it starts at, as it closes.
 	links: Vec<(usize, Link)>,
@@ -115,7 +130,7 @@ struct Walker<'a> {
 	/// The lists that follow another list with no block between them, as the indexes of both.
 	neighbors: Vec<(usize, usize)>,
 	/// One entry per open block, the document first.
-	blocks: Vec<Sibling>,
+	siblings: Vec<Sibling>,
 	open_lists: Vec<OpenList>,
 	blockquotes: usize,
 	images: usize,
@@ -130,9 +145,14 @@ impl<'a> Walker<'a> {
 			anchors: Anchors::default(),
 			code: vec![false; index.count()],
 			protected: vec![Vec::new(); index.count()],
+			blocks: Vec::new(),
+			containers: 0,
+			literal: false,
 			headings: Vec::new(),
 			fences: Vec::new(),
-			bullets: Vec::new(),
+			items: Vec::new(),
+			emphasis: Vec::new(),
+			prose: Vec::new(),
 			tables: Vec::new(),
 			links: Vec::new(),
 			used_labels: HashSet::new(),
@@ -140,7 +160,7 @@ impl<'a> Walker<'a> {
 			unclosed_fence: None,
 			lists: Vec::new(),
 			neighbors: Vec::new(),
-			blocks: vec![Sibling::default()],
+			siblings: vec![Sibling::default()],
 			open_lists: Vec::new(),
 			blockquotes: 0,
 			images: 0,
@@ -152,7 +172,10 @@ impl<'a> Walker<'a> {
 		match event {
 			Event::Start(tag) => self.start(tag, range),
 			Event::End(end) => self.end(end, range),
-			Event::Text(text) => self.text(&text, &range),
+			Event::Text(text) => {
+				self.text(&text, &range);
+				self.prose(&range);
+			}
 			Event::Code(code) => {
 				self.text(&code, &range);
 				self.protect_code(&range);
@@ -164,7 +187,10 @@ impl<'a> Walker<'a> {
 			}
 			Event::Html(html) => self.anchors.html(&html),
 			Event::SoftBreak | Event::HardBreak => self.text(" ", &range),
-			Event::Rule => self.sibling(None),
+			Event::Rule => {
+				self.sibling(None);
+				self.block(BlockKind::Rule, &range);
+			}
 			_ => self.touch(&range),
 		}
 	}
@@ -173,29 +199,69 @@ impl<'a> Walker<'a> {
 		let list = matches!(tag, Tag::List(_)).then(|| self.lists.len());
 		if let Some(index) = list {
 			self.lists.push(range.clone());
-			if let Some(previous) = self.blocks.last().and_then(|sibling| sibling.0) {
+			if let Some(previous) = self.siblings.last().and_then(|sibling| sibling.0) {
 				self.neighbors.push((previous, index));
 			}
 		}
 		self.sibling(None);
-		self.blocks.push(Sibling::default());
+		self.siblings.push(Sibling::default());
 		match tag {
 			Tag::Heading { level, .. } => {
+				self.block(BlockKind::Heading, &range);
+				let (start, end) = self.span_lines(&range);
+				let underlined = end > start && is_underline(self.index.text(self.source, end));
 				let purpose = Purpose::Heading {
 					level: level as u8,
-					line: self.index.line(range.start) + 1,
+					line: start + 1,
+					underline: underlined.then_some(end + 1),
 				};
 				self.texts.push(Gathering::new(purpose, self.images, range.start));
 			}
-			Tag::CodeBlock(kind) => self.code_block(&kind, &range),
-			Tag::HtmlBlock => self.mark_code(&range),
-			Tag::Paragraph if self.blockquotes > 0 => self.lazy_lines(&range),
-			Tag::BlockQuote(_) => self.blockquotes += 1,
-			Tag::List(first) => self.open_lists.push(OpenList {
-				ordered: first.is_some(),
-				index: list.unwrap_or_default(),
-			}),
-			Tag::Item => self.item(&range),
+			Tag::Paragraph => {
+				self.block(BlockKind::Paragraph, &range);
+				if self.blockquotes > 0 {
+					self.lazy_lines(&range);
+				}
+			}
+			Tag::CodeBlock(kind) => {
+				let block = match kind {
+					CodeBlockKind::Fenced(_) => BlockKind::FencedCode,
+					CodeBlockKind::Indented => BlockKind::IndentedCode,
+				};
+				self.block(block, &range);
+				self.literal = true;
+				self.code_block(&kind, &range);
+			}
+			Tag::HtmlBlock => {
+				self.block(BlockKind::Html, &range);
+				self.literal = true;
+				self.mark_code(&range);
+			}
+			Tag::MetadataBlock(_) => {
+				self.block(BlockKind::Metadata, &range);
+				self.literal = true;
+				self.mark_code(&range);
+			}
+			Tag::Table(_) => self.block(BlockKind::Table, &range),
+			Tag::BlockQuote(_) => {
+				self.block(BlockKind::BlockQuote, &range);
+				self.blockquotes += 1;
+				self.containers += 1;
+			}
+			Tag::List(first) => {
+				self.block(BlockKind::List, &range);
+				self.containers += 1;
+				self.open_lists.push(OpenList {
+					ordered: first.is_some(),
+					index: list.unwrap_or_default(),
+				});
+			}
+			Tag::Item => {
+				self.item(&range);
+				self.containers += 1;
+			}
+			Tag::Emphasis => self.emphasis(&range, false),
+			Tag::Strong => self.emphasis(&range, true),
 			Tag::TableHead => {
 				self.tables.push(Table {
 					header: self.index.line(range.start) + 1,
@@ -228,7 +294,7 @@ impl<'a> Walker<'a> {
 	}
 
 	fn end(&mut self, end: TagEnd, range: Range<usize>) {
-		self.blocks.pop();
+		self.siblings.pop();
 		let list = match end {
 			TagEnd::List(_) => self.open_lists.pop().map(|list| list.index),
 			_ => None,
@@ -236,7 +302,12 @@ impl<'a> Walker<'a> {
 		self.sibling(list);
 		match end {
 			TagEnd::Heading(_) | TagEnd::Link => self.finish_text(),
-			TagEnd::BlockQuote(_) => self.blockquotes -= 1,
+			TagEnd::BlockQuote(_) => {
+				self.blockquotes -= 1;
+				self.containers -= 1;
+			}
+			TagEnd::List(_) | TagEnd::Item => self.containers -= 1,
+			TagEnd::CodeBlock | TagEnd::HtmlBlock | TagEnd::MetadataBlock(_) => self.literal = false,
 			TagEnd::Image => {
 				self.images -= 1;
 				self.finish_text();
@@ -247,8 +318,68 @@ impl<'a> Walker<'a> {
 	}
 
 	fn sibling(&mut self, list: Option<usize>) {
-		if let Some(top) = self.blocks.last_mut() {
+		if let Some(top) = self.siblings.last_mut() {
 			*top = Sibling(list);
+		}
+	}
+
+	/// Records a block of `kind` over `range`, as deep as the containers open around it.
+	fn block(&mut self, kind: BlockKind, range: &Range<usize>) {
+		let (first, last) = self.span_lines(range);
+		self.blocks.push(Block {
+			kind,
+			first: first + 1,
+			last: last + 1,
+			depth: self.containers,
+		});
+	}
+
+	/// The 0-based lines `range` covers, from the one it starts on to the one its last character other than white
+	/// space is on: the parser counts the blank lines after a block as part of it.
+	fn span_lines(&self, range: &Range<usize>) -> (usize, usize) {
+		let content = self.source[range.clone()].trim_end().len();
+		let first = self.index.line(range.start);
+		(
+			first,
+			self.index.line(range.start + content.saturating_sub(1)).max(first),
+		)
+	}
+
+	/// The bytes `range` covers as a span of one line, or nothing when it runs over more than one.
+	fn span(&self, range: Range<usize>) -> Option<Span> {
+		let line = self.index.line(range.start);
+		(range.is_empty() || self.index.line(range.end - 1) == line).then(|| {
+			let column = self.index.column(range.start);
+			Span {
+				line: line + 1,
+				columns: column..column + range.len(),
+			}
+		})
+	}
+
+	/// Records emphasis over `range`, whose delimiters are one character long, or two for strong emphasis.
+	fn emphasis(&mut self, range: &Range<usize>, strong: bool) {
+		let width = if strong { 2 } else { 1 };
+		let delimited = self.source[range.clone()].starts_with(['*', '_']) && range.len() >= 2 * width;
+		let open = delimited.then(|| self.span(range.start..range.start + width)).flatten();
+		let close = delimited.then(|| self.span(range.end - width..range.end)).flatten();
+		if let (Some(open), Some(close)) = (open, close) {
+			self.emphasis.push(Emphasis { strong, open, close });
+		}
+	}
+
+	/// Records the text at `range` as prose, unless it is the text of a link or of a literal block.
+	fn prose(&mut self, range: &Range<usize>) {
+		let in_link = self
+			.texts
+			.iter()
+			.any(|gathering| matches!(gathering.purpose, Purpose::Link { .. } | Purpose::Unlisted));
+		if self.literal || in_link {
+			return;
+		}
+		match self.prose.last_mut() {
+			Some(last) if last.end == range.start => last.end = range.end,
+			_ => self.prose.push(range.clone()),
 		}
 	}
 
@@ -274,9 +405,15 @@ impl<'a> Walker<'a> {
 	fn finish_text(&mut self) {
 		let Some(gathering) = self.texts.pop() else { return };
 		match gathering.purpose {
-			Purpose::Heading { level, line } => {
+			Purpose::Heading { level, line, underline } => {
 				let anchor = self.anchors.heading(&gathering.text);
-				self.headings.push(Heading { level, line, anchor });
+				self.headings.push(Heading {
+					level,
+					line,
+					text: gathering.text.trim().to_owned(),
+					anchor,
+					underline,
+				});
 			}
 			Purpose::Link {
 				target,
@@ -284,8 +421,12 @@ impl<'a> Walker<'a> {
 				start,
 				text_start,
 			} => {
-				let written = destination::inline(self.source, gathering.last_end.max(text_start));
+				let text_end = gathering.last_end.max(text_start);
+				let written = destination::inline(self.source, text_end);
 				let (line, destination) = self.place(written.clone(), start);
+				let label = destination::closing_bracket(self.source, text_end)
+					.filter(|_| !image)
+					.and_then(|close| self.span(text_start..close));
 				if let Some(written) = written {
 					self.protect(written);
 				}
@@ -302,6 +443,7 @@ impl<'a> Walker<'a> {
 					target,
 					line,
 					destination,
+					label,
 					kind,
 				};
 				self.links.push((start, found));
@@ -346,20 +488,39 @@ impl<'a> Walker<'a> {
 		self.texts.push(Gathering::new(purpose, self.images, text_start));
 	}
 
+	/// Records the item at `range`: its marker, the spaces after it and the lines it takes.
 	fn item(&mut self, range: &Range<usize>) {
-		let Some(&OpenList { ordered: false, index }) = self.open_lists.last() else {
+		let Some(&OpenList { ordered, index }) = self.open_lists.last() else {
 			return;
 		};
-		let Some(marker) = self.source[range.start..].chars().next().and_then(Marker::from_char) else {
-			return;
+		let text = &self.source[range.start..];
+		let marker = if ordered {
+			let digits = text.bytes().take_while(u8::is_ascii_digit).count();
+			let delimiter = text[digits..].chars().next();
+			match (text[..digits].parse(), delimiter) {
+				(Ok(value), Some(delimiter @ ('.' | ')'))) => ItemMarker::Number {
+					value,
+					digits,
+					delimiter,
+				},
+				_ => return,
+			}
+		} else {
+			match text.chars().next().and_then(Marker::from_char) {
+				Some(marker) => ItemMarker::Bullet(marker),
+				None => return,
+			}
 		};
-		let bullet = Bullet {
-			line: self.index.line(range.start) + 1,
+		let (first, last) = self.span_lines(range);
+		self.items.push(ListItem {
+			line: first + 1,
+			last_line: last + 1,
 			column: self.index.column(range.start),
 			marker,
+			spaces: text[marker.width()..].bytes().take_while(|&b| b == b' ').count(),
+			list: index,
 			adjacent: false,
-		};
-		self.bullets.push((bullet, index));
+		});
 	}
 
 	fn code_block(&mut self, kind: &CodeBlockKind<'_>, range: &Range<usize>) {
@@ -367,12 +528,17 @@ impl<'a> Walker<'a> {
 		let CodeBlockKind::Fenced(info) = kind else { return };
 		let lines = self.index.lines(range);
 		let (open, last) = (*lines.start(), *lines.end());
+		let text = |line| self.index.text(self.source, line);
+		let opening = strip_containers(text(open));
+		let marker = opening.chars().next().unwrap_or('`');
+		let closed = last > open && closes_fence(text(open), text(last));
 		self.fences.push(Fence {
 			info: info.trim().to_owned(),
 			line: open + 1,
+			marker,
+			length: opening.chars().take_while(|&c| c == marker).count(),
+			closing: closed.then_some(last + 1),
 		});
-		let text = |line| self.index.text(self.source, line);
-		let closed = last > open && closes_fence(text(open), text(last));
 		if !closed && self.unclosed_fence.is_none() {
 			self.unclosed_fence = Some(open + 1);
 		}
@@ -430,6 +596,7 @@ impl<'a> Walker<'a> {
 				target: target.clone(),
 				line,
 				destination: columns,
+				label: None,
 				kind: LinkKind::Definition,
 			};
 			definition_links.push(entry);
@@ -440,7 +607,8 @@ impl<'a> Walker<'a> {
 			definitions.entry(label.clone()).or_insert(definition);
 		}
 		let spans: Vec<&Range<usize>> = written.iter().map(|definition| &definition.span).collect();
-		let bullets = self.mark_adjacent(&spans);
+		let items = self.mark_adjacent(&spans);
+		let bare_urls = self.bare_urls();
 		self.links.sort_by_key(|(start, _)| *start);
 		let all_links = self
 			.links
@@ -465,9 +633,12 @@ impl<'a> Walker<'a> {
 		Document {
 			lines,
 			anchors: self.anchors.into_set(),
+			blocks: self.blocks,
 			headings: self.headings,
 			fences: self.fences,
-			bullets,
+			items,
+			emphasis: self.emphasis,
+			bare_urls,
 			tables: self.tables,
 			links: all_links,
 			definitions,
@@ -478,10 +649,25 @@ impl<'a> Walker<'a> {
 		}
 	}
 
-	/// The bullets, each marked when its list stands next to another list. The parser gives no event for a reference
+	/// The URLs written as plain text in the prose, each without the punctuation that ends its sentence, as GFM finds
+	/// them.
+	fn bare_urls(&self) -> Vec<Span> {
+		let mut urls = Vec::new();
+		for range in &self.prose {
+			for found in URL.find_iter(&self.source[range.clone()]) {
+				let end = range.start + found.start() + url_length(found.as_str());
+				if let Some(span) = self.span(range.start + found.start()..end) {
+					urls.push(span);
+				}
+			}
+		}
+		urls
+	}
+
+	/// The items, each marked when its list stands next to another list. The parser gives no event for a reference
 	/// definition, so two lists with only definitions between them look like neighbors; the definitions keep them
 	/// apart.
-	fn mark_adjacent(&mut self, definitions: &[&Range<usize>]) -> Vec<Bullet> {
+	fn mark_adjacent(&mut self, definitions: &[&Range<usize>]) -> Vec<ListItem> {
 		let mut adjacent = vec![false; self.lists.len()];
 		for &(previous, next) in &self.neighbors {
 			let between = self.lists[previous].end..self.lists[next].start;
@@ -490,11 +676,11 @@ impl<'a> Walker<'a> {
 				adjacent[next] = true;
 			}
 		}
-		std::mem::take(&mut self.bullets)
+		std::mem::take(&mut self.items)
 			.into_iter()
-			.map(|(bullet, list)| Bullet {
-				adjacent: adjacent[list],
-				..bullet
+			.map(|item| ListItem {
+				adjacent: adjacent[item.list],
+				..item
 			})
 			.collect()
 	}
@@ -529,4 +715,27 @@ fn strip_containers(line: &str) -> &str {
 		inner = rest.trim();
 	}
 	inner
+}
+
+/// Whether `line` underlines a setext heading: `=` or `-` and nothing else but spaces around them.
+fn is_underline(line: &str) -> bool {
+	let line = line.trim();
+	!line.is_empty() && (line.bytes().all(|b| b == b'=') || line.bytes().all(|b| b == b'-'))
+}
+
+/// How much of `url` is the URL: GFM leaves out the punctuation that ends a sentence, and a `)` it does not open.
+fn url_length(url: &str) -> usize {
+	let mut end = url.len();
+	loop {
+		let trimmed = url[..end].trim_end_matches(['.', ',', ':', ';', '!', '?', '*', '_', '~', '\'', '"']);
+		let opened = trimmed.matches('(').count();
+		end = if trimmed.ends_with(')') && trimmed.matches(')').count() > opened {
+			trimmed.len() - 1
+		} else {
+			trimmed.len()
+		};
+		if end == trimmed.len() {
+			return end;
+		}
+	}
 }

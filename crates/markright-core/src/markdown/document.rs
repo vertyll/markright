@@ -18,12 +18,18 @@ pub struct Document {
 	pub lines: Vec<Line>,
 	/// The anchors a `#fragment` may name: one per heading, numbered when repeated, and the ids of HTML elements.
 	pub anchors: HashSet<String>,
+	/// Every block, containers before what they hold, in the order they start.
+	pub blocks: Vec<Block>,
 	/// The headings, in order.
 	pub headings: Vec<Heading>,
 	/// The fenced code blocks, in order.
 	pub fences: Vec<Fence>,
-	/// The markers of the items of unordered lists, in order.
-	pub bullets: Vec<Bullet>,
+	/// The items of every list, in order.
+	pub items: Vec<ListItem>,
+	/// The emphasis and strong emphasis, in the order they start.
+	pub emphasis: Vec<Emphasis>,
+	/// The URLs written as plain text, outside any link, in order.
+	pub bare_urls: Vec<Span>,
 	/// The tables, in order.
 	pub tables: Vec<Table>,
 	/// The inline links and images, in the order they start, then the reference definitions.
@@ -61,37 +67,138 @@ pub struct Table {
 	pub body: Vec<usize>,
 }
 
-/// A heading: its level, 1 to 6, its line and the anchor it defines.
+/// Some bytes of one line.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Span {
+	/// The line.
+	pub line: usize,
+	/// The bytes of the line.
+	pub columns: Range<usize>,
+}
+
+/// A block of the document: what it is, the lines it takes, and how many lists, list items and blockquotes it sits in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Block {
+	/// What it is.
+	pub kind: BlockKind,
+	/// Its first line.
+	pub first: usize,
+	/// Its last line, without the blank lines after it.
+	pub last: usize,
+	/// How many lists, list items and blockquotes it sits in; 0 at the top of the document.
+	pub depth: usize,
+}
+
+/// What a [`Block`] is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BlockKind {
+	/// A paragraph.
+	Paragraph,
+	/// A heading.
+	Heading,
+	/// A list.
+	List,
+	/// A blockquote.
+	BlockQuote,
+	/// A code block between fences.
+	FencedCode,
+	/// A code block indented by four spaces.
+	IndentedCode,
+	/// An HTML block.
+	Html,
+	/// A table.
+	Table,
+	/// A thematic break, a horizontal rule.
+	Rule,
+	/// A front matter block, in YAML between `---` or in TOML between `+++`, at the very start of the document.
+	Metadata,
+}
+
+/// A heading: its level, 1 to 6, its line, its text and the anchor it defines.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Heading {
 	/// From 1 for `#` to 6 for `######`.
 	pub level: u8,
 	/// The line the heading starts on.
 	pub line: usize,
+	/// Its text, without markup.
+	pub text: String,
 	/// The anchor a `#fragment` names it by, numbered when an earlier heading has the same.
 	pub anchor: String,
+	/// The line of its underline, `===` or `---`, when it is written as a setext heading.
+	pub underline: Option<usize>,
 }
 
-/// A fenced code block: its info string, whose first word names the language, and the line it opens on.
+/// A fenced code block: its info string, whose first word names the language, its fences and its lines.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Fence {
 	/// The info string, trimmed; empty when the fence names no language.
 	pub info: String,
 	/// The line of the opening fence.
 	pub line: usize,
+	/// The character of the fence: a backtick or a tilde.
+	pub marker: char,
+	/// How many of it the opening fence has.
+	pub length: usize,
+	/// The line of the closing fence; none when the block runs to the end of its container.
+	pub closing: Option<usize>,
 }
 
-/// The marker of an item in an unordered list.
+/// An item of a list: where its marker is, what it is, and how far its content stands from it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Bullet {
-	/// The line of the item.
+pub struct ListItem {
+	/// The line the item starts on.
 	pub line: usize,
+	/// The last line of the item, without the blank lines after it.
+	pub last_line: usize,
 	/// The byte of the line the marker is at.
 	pub column: usize,
 	/// The marker.
-	pub marker: Marker,
+	pub marker: ItemMarker,
+	/// How many spaces follow the marker on its line.
+	pub spaces: usize,
+	/// The list it belongs to, counted from 0 in the order the lists start.
+	pub list: usize,
 	/// Whether the list stands right next to another list, which only a different marker keeps apart.
 	pub adjacent: bool,
+}
+
+/// The marker of a list item.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ItemMarker {
+	/// `-`, `*` or `+`, of an unordered list.
+	Bullet(Marker),
+	/// A number and its delimiter, `.` or `)`, of an ordered list.
+	Number {
+		/// The number as written.
+		value: u64,
+		/// How many digits are written, leading zeros included.
+		digits: usize,
+		/// `.` or `)`.
+		delimiter: char,
+	},
+}
+
+impl ItemMarker {
+	/// How many bytes the marker takes.
+	#[must_use]
+	pub fn width(self) -> usize {
+		match self {
+			Self::Bullet(_) => 1,
+			Self::Number { digits, .. } => digits + 1,
+		}
+	}
+}
+
+/// Emphasis, `*text*` or `_text_`, or strong emphasis, `**text**` or `__text__`: where its delimiters are.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Emphasis {
+	/// Whether it is strong emphasis, with two-character delimiters.
+	pub strong: bool,
+	/// The opening delimiter.
+	pub open: Span,
+	/// The closing delimiter.
+	pub close: Span,
 }
 
 /// A marker `CommonMark` allows for an item of an unordered list.
@@ -141,6 +248,8 @@ pub struct Link {
 	pub line: usize,
 	/// The bytes of `line` the destination is written in, inside any angle brackets; empty when it writes none.
 	pub destination: Range<usize>,
+	/// The bytes between the brackets of an inline link, when both brackets are on one line.
+	pub label: Option<Span>,
 	/// What it is, and what it shows.
 	pub kind: LinkKind,
 }
@@ -187,6 +296,20 @@ impl Document {
 	#[must_use]
 	pub fn parse(content: &str) -> Self {
 		walker::parse(content)
+	}
+
+	/// The block of `kind` that starts on `line` at the top of the document, outside lists and blockquotes.
+	#[must_use]
+	pub fn top_level(&self, kind: BlockKind, line: usize) -> Option<&Block> {
+		self.blocks
+			.iter()
+			.find(|block| block.kind == kind && block.first == line && block.depth == 0)
+	}
+
+	/// Whether the 1-based `line` is blank, or outside the document: before its first line or after its last.
+	#[must_use]
+	pub fn is_blank(&self, line: usize) -> bool {
+		line == 0 || self.lines.get(line - 1).is_none_or(|line| line.text.trim().is_empty())
 	}
 }
 

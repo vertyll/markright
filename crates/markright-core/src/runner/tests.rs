@@ -109,7 +109,7 @@ fn check_is_clean_after_fmt() {
 
 #[test]
 fn disabled_linters_and_formatters() {
-	let root = tree(&[("a.md", &format!("a -> b\n[x](gone.md)\n{}\n", "x".repeat(160)))]);
+	let root = tree(&[("a.md", &format!("# A\n\na -> b\n[x](gone.md)\n{}\n", "x".repeat(160)))]);
 	let mut config = Config::default();
 	config.linters.disable = vec!["links".into(), "line-length".into()];
 	config.formatters.disable = vec!["arrows".into()];
@@ -118,9 +118,9 @@ fn disabled_linters_and_formatters() {
 
 #[test]
 fn exclusions() {
-	let long = format!("{}\n[y](gone.md)\n", "x".repeat(160));
+	let long = format!("# Legacy\n\n{}\n[y](gone.md)\n", "x".repeat(160));
 	let root = tree(&[
-		("CONTENTS.md", "[a](a.md)\n"),
+		("CONTENTS.md", "# Contents\n\n[a](a.md)\n"),
 		("a.md", "# A\n"),
 		("generated/x.md", "a -> b\n[x](gone.md)\n"),
 		("docs/legacy.md", &long),
@@ -135,7 +135,7 @@ fn exclusions() {
 	assert_eq!(
 		out,
 		"CONTENTS.md:1: document not listed: docs/legacy.md (index)
-docs/legacy.md:2: broken link: gone.md (links)
+docs/legacy.md:4: broken link: gone.md (links)
 "
 	);
 	run(root.path(), &config, Mode::Format);
@@ -149,9 +149,9 @@ docs/legacy.md:2: broken link: gone.md (links)
 #[test]
 fn configured_index_and_readme() {
 	let root = tree(&[
-		("index.md", "[r](readme.md)\n"),
-		("readme.md", "x\n"),
-		("GLOSSARY.md", "x\n"),
+		("index.md", "# Index\n\n[r](readme.md)\n"),
+		("readme.md", "# Readme\n"),
+		("GLOSSARY.md", "# Glossary\n"),
 	]);
 	let config = config(
 		"version: \"1\"\nlinters:\n  settings:\n    index:\n      file: index.md\n    readme-links:\n      file: readme.md\n      \
@@ -217,17 +217,17 @@ fn line_changing_formatters_report_the_original_lines() {
 
 #[test]
 fn formatter_settings_reach_the_formatter() {
-	let root = tree(&[("a.md", "- one\n- two\n")]);
+	let root = tree(&[("a.md", "# A\n\n- one\n- two\n")]);
 	let config = config("version: \"1\"\nformatters:\n  settings:\n    list-marker:\n      marker: \"*\"\n");
 	assert_eq!(
 		output(&run(root.path(), &config, Mode::Lint)),
-		"a.md:1: list item marked differently from the configured marker (list-marker)
+		"a.md:3: list item marked differently from the configured marker (list-marker)
 \
-		 a.md:2: list item marked differently from the configured marker (list-marker)
+		 a.md:4: list item marked differently from the configured marker (list-marker)
 "
 	);
 	run(root.path(), &config, Mode::Format);
-	assert_eq!(read(root.path(), "a.md"), "* one\n* two\n");
+	assert_eq!(read(root.path(), "a.md"), "# A\n\n* one\n* two\n");
 }
 
 #[test]
@@ -262,7 +262,7 @@ fn parallel_runs_give_the_same_result() {
 #[test]
 fn a_removed_file_is_missing_in_the_next_run() {
 	let root = tree(&[
-		("a.md", "See [the logo](logo.png) and [b](b.md).\n"),
+		("a.md", "# A\n\nSee [the logo](logo.png) and [b](b.md).\n"),
 		("b.md", "# B\n"),
 		("logo.png", "x"),
 	]);

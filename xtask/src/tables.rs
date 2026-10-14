@@ -79,8 +79,20 @@ fn lowercase_first(text: &str) -> String {
 pub(crate) fn default(value: &Value) -> String {
 	match value {
 		Value::Array(items) => items.iter().map(default).collect::<Vec<_>>().join(", "),
-		Value::String(s) => format!("`{s}`"),
-		other => format!("`{other}`"),
+		Value::String(text) => code_span(text),
+		other => code_span(&other.to_string()),
+	}
+}
+
+/// `text` as a code span: between more backticks than any run of them inside it, with a space on each side when it
+/// starts or ends with one, so `` ` `` reads as a backtick.
+fn code_span(text: &str) -> String {
+	let longest = text.split(|c| c != '`').map(str::len).max().unwrap_or(0);
+	let fence = "`".repeat(longest + 1);
+	if text.starts_with('`') || text.ends_with('`') {
+		format!("{fence} {text} {fence}")
+	} else {
+		format!("{fence}{text}{fence}")
 	}
 }
 
@@ -176,8 +188,28 @@ pub(crate) fn check(root: &Path) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+	use markright_core::markdown::Document;
+
+	use super::{code_span, tables};
+
 	#[test]
 	fn the_tables_are_current() {
 		super::check(&crate::root()).unwrap();
+	}
+
+	#[test]
+	fn every_table_has_one_row_per_entry() {
+		for table in tables(&crate::root()).unwrap() {
+			let parsed = Document::parse(&table.markdown());
+			let rows = parsed.tables.first().map_or(0, |parsed| parsed.body.len());
+			assert_eq!(rows, table.rows.len(), "{}: {}", table.document, table.marker);
+		}
+	}
+
+	#[test]
+	fn a_code_span_holds_any_backticks() {
+		assert_eq!(code_span("-"), "`-`");
+		assert_eq!(code_span("`"), "`` ` ``");
+		assert_eq!(code_span("a``b"), "```a``b```");
 	}
 }

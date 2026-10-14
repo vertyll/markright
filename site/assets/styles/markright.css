@@ -1,4 +1,5 @@
-/* The site's one stylesheet: esbuild bundles these parts into static/markright.css. */
+/* The site's one stylesheet: esbuild bundles these parts, and the Inter typeface, into static/markright.css. */
+@import "@fontsource-variable/inter/index.css";
 @import "./tokens.css";
 @import "./base.css";
 @import "./layout.css";

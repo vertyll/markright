@@ -69,7 +69,7 @@ mod in_memory {
 		let documents = BTreeMap::from([
 			(
 				"doc.md".to_owned(),
-				"# Title\n\nGo -> [here](guide.md) and [there](img.png).\n".to_owned(),
+				"# Title\n\nGo -> [the guide](guide.md) and [the image](img.png).\n".to_owned(),
 			),
 			("img.png".to_owned(), String::new()),
 		]);
@@ -84,7 +84,7 @@ mod in_memory {
 		);
 		assert_eq!(
 			checked.fixed["doc.md"],
-			"# Title\n\nGo → [here](guide.md) and [there](img.png).\n"
+			"# Title\n\nGo → [the guide](guide.md) and [the image](img.png).\n"
 		);
 	}
 }

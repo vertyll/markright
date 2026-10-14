@@ -21,6 +21,8 @@ pub struct Settings {
 	pub readme_links: ReadmeLinks,
 	/// The settings of alerts.
 	pub alerts: Alerts,
+	/// The settings of link-text.
+	pub link_text: LinkText,
 }
 
 /// The settings of line-length.
@@ -89,6 +91,25 @@ impl Default for Alerts {
 	fn default() -> Self {
 		Self {
 			types: ["NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"]
+				.map(str::to_owned)
+				.to_vec(),
+		}
+	}
+}
+
+/// The settings of link-text.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(default, deny_unknown_fields)]
+pub struct LinkText {
+	/// The texts that say nothing about where a link leads, compared without case and without the punctuation around
+	/// them.
+	pub phrases: Vec<String>,
+}
+
+impl Default for LinkText {
+	fn default() -> Self {
+		Self {
+			phrases: ["click here", "here", "link", "more", "read more", "this", "this link"]
 				.map(str::to_owned)
 				.to_vec(),
 		}

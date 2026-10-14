@@ -40,7 +40,7 @@
   --mr-nav-active: light-dark(#e4e4e7, #2a2a2e);
   --mr-scrollbar: light-dark(#a1a1aa, #71717a);
   --mr-mono: ui-monospace, sfmono-regular, menlo, consolas, monospace;
-  --mr-sans: system-ui, -apple-system, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
+  --mr-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
   --mr-header-height: 3.5rem;
   --mr-footer-height: 2.75rem;
   --mr-radius: 6px;

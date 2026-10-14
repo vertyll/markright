@@ -2,7 +2,11 @@ use proptest::prelude::*;
 
 use super::settings::{self, Settings};
 use super::width::display_width;
-use super::{ALL, Fix, Formatter, arrows, blank_lines, final_newline, list_marker, tables, trailing_whitespace};
+use super::{
+	ALL, Fix, Formatter, arrows, bare_urls, blank_lines, block_spacing, blockquote_space, emphasis_marker,
+	fence_marker, final_newline, hard_tabs, heading_spacing, heading_style, horizontal_rule, link_spacing, list_marker,
+	list_marker_space, ordered_list_numbers, tables, trailing_whitespace,
+};
 use crate::markdown::Marker;
 use crate::markdown::{Document, table_cells};
 
@@ -229,6 +233,7 @@ fn list_marker_follows_its_settings() {
 	let d = Document::parse("- a\n+ b\n\ntext\n\n- c\n- d\n\n```\n- code\n```");
 	let settings = Settings {
 		list_marker: settings::ListMarker { marker: Marker::Star },
+		..Settings::default()
 	};
 	let got = list_marker::ListMarker.apply(&d, &settings).lines.join("\n");
 	assert_eq!(got, "- a\n+ b\n\ntext\n\n* c\n* d\n\n```\n- code\n```");
@@ -246,16 +251,243 @@ fn list_marker_settings_accept_only_list_markers() {
 	}
 }
 
+/// Checks that `formatter` makes each input of `cases` into its output, with the default settings.
+fn check_cases(formatter: &dyn Formatter, cases: &[(&str, &str)]) {
+	for (input, want) in cases {
+		assert_eq!(
+			apply(formatter, input, &[]),
+			*want,
+			"{} on {input:?}",
+			formatter.about().name
+		);
+	}
+}
+
+#[test]
+fn hard_tabs() {
+	check_cases(
+		&hard_tabs::HardTabs,
+		&[
+			("a\tb", "a   b"),
+			("abc\td", "abc d"),
+			("abcd\te", "abcd    e"),
+			("`a\tb` and\tc", "`a\tb` and   c"),
+			("\tcode", "\tcode"),
+		],
+	);
+}
+
+#[test]
+fn heading_spacing() {
+	check_cases(
+		&heading_spacing::HeadingSpacing,
+		&[
+			("#   A", "# A"),
+			("## A ##", "## A"),
+			("  ### A", "### A"),
+			("# C#", "# C#"),
+			("# A \\#", "# A \\#"),
+			("#", "#"),
+			("# #", "#"),
+			("- #  In a list", "- #  In a list"),
+			("Setext\n===", "Setext\n==="),
+		],
+	);
+}
+
+#[test]
+fn blockquote_space() {
+	check_cases(
+		&blockquote_space::BlockquoteSpace,
+		&[
+			(">a", "> a"),
+			(">>a", ">> a"),
+			("> > a", "> > a"),
+			(">", ">"),
+			("a > b", "a > b"),
+			("> a\n>b", "> a\n> b"),
+			("```\n>code\n```", "```\n>code\n```"),
+		],
+	);
+}
+
+#[test]
+fn list_marker_space() {
+	check_cases(
+		&list_marker_space::ListMarkerSpace,
+		&[
+			("-  a", "- a"),
+			("1.   a", "1. a"),
+			("-     code", "-     code"),
+			("-  a\n   b", "-  a\n   b"),
+			("-", "-"),
+		],
+	);
+}
+
+#[test]
+fn ordered_list_numbers() {
+	check_cases(
+		&ordered_list_numbers::OrderedListNumbers,
+		&[
+			("1. a\n1. b\n1. c", "1. a\n2. b\n3. c"),
+			("3) a\n3) b", "3) a\n4) b"),
+			("1. a\n   1. x\n   1. y\n1. b", "1. a\n   1. x\n   2. y\n2. b"),
+			("9. a\n9. b\n   more", "9. a\n9. b\n   more"),
+			("9. a\n9. b", "9. a\n10. b"),
+		],
+	);
+	let mut same = Settings::default();
+	same.ordered_list_numbers.numbering = settings::Numbering::Same;
+	let d = Document::parse("1. a\n2. b\n3. c");
+	assert_eq!(
+		ordered_list_numbers::OrderedListNumbers
+			.apply(&d, &same)
+			.lines
+			.join("\n"),
+		"1. a\n1. b\n1. c"
+	);
+}
+
+#[test]
+fn emphasis_marker() {
+	check_cases(
+		&emphasis_marker::EmphasisMarker,
+		&[
+			("_a_ __b__", "*a* **b**"),
+			("___c___", "***c***"),
+			("snake_case_name", "snake_case_name"),
+			("`_code_`", "`_code_`"),
+		],
+	);
+	let mut underscore = Settings::default();
+	underscore.emphasis_marker.marker = settings::Delimiter::Underscore;
+	for (input, want) in [("*a* **b**", "_a_ __b__"), ("a*b*c", "a*b*c")] {
+		let d = Document::parse(input);
+		assert_eq!(
+			emphasis_marker::EmphasisMarker.apply(&d, &underscore).lines.join("\n"),
+			want,
+			"{input:?}"
+		);
+	}
+}
+
+#[test]
+fn link_spacing() {
+	check_cases(
+		&link_spacing::LinkSpacing,
+		&[
+			("[ a ](x)", "[a](x)"),
+			("[ ](x)", "[ ](x)"),
+			("![ a ](x)", "![ a ](x)"),
+			("[a](x) [ b](y)", "[a](x) [b](y)"),
+		],
+	);
+}
+
+#[test]
+fn bare_urls() {
+	check_cases(
+		&bare_urls::BareUrls,
+		&[
+			("see https://a.org/b.", "see <https://a.org/b>."),
+			("(https://a.org/b_(c))", "(<https://a.org/b_(c)>)"),
+			("<https://a.org>", "<https://a.org>"),
+			("[https://a.org](https://a.org)", "[https://a.org](https://a.org)"),
+			("`https://a.org`", "`https://a.org`"),
+			("https://a.org and http://b.org", "<https://a.org> and <http://b.org>"),
+		],
+	);
+}
+
+#[test]
+fn fence_marker() {
+	check_cases(
+		&fence_marker::FenceMarker,
+		&[
+			("~~~py\nx\n~~~", "```py\nx\n```"),
+			("~~~\n```\n~~~", "````\n```\n````"),
+			("~~~ a`b\nx\n~~~", "~~~ a`b\nx\n~~~"),
+			("~~~\nopen", "~~~\nopen"),
+			("> ~~~\n> x\n> ~~~", "> ```\n> x\n> ```"),
+		],
+	);
+	let mut tilde = Settings::default();
+	tilde.fence_marker.marker = settings::Fence::Tilde;
+	let d = Document::parse("```\nx\n```");
+	assert_eq!(
+		fence_marker::FenceMarker.apply(&d, &tilde).lines.join("\n"),
+		"~~~\nx\n~~~"
+	);
+}
+
+#[test]
+fn horizontal_rule() {
+	check_cases(
+		&horizontal_rule::HorizontalRule,
+		&[
+			("a\n\n***\n\nb", "a\n\n---\n\nb"),
+			("a\n\n- - -", "a\n\n---"),
+			("a\n***", "a\n***"),
+			("***\n\na", "***\n\na"),
+			("- ***", "- ***"),
+		],
+	);
+}
+
+#[test]
+fn heading_style() {
+	check_cases(
+		&heading_style::HeadingStyle,
+		&[
+			("A\n===", "# A"),
+			("A\n---\n\ntext", "## A\n\ntext"),
+			("A\nb\n===", "# A b"),
+			("> A\n> ===", "> A\n> ==="),
+			("# Already", "# Already"),
+		],
+	);
+	assert_eq!(fix(&heading_style::HeadingStyle, "x\n\nA\nb\n===\n").changed, [3, 4, 5]);
+}
+
+#[test]
+fn block_spacing() {
+	check_cases(
+		&block_spacing::BlockSpacing,
+		&[
+			("# A\n## B", "# A\n\n## B"),
+			("text\n- a\n- b\n# H", "text\n\n- a\n- b\n\n# H"),
+			("a\n```\nx\n```\nb", "a\n\n```\nx\n```\n\nb"),
+			("| a |\n|---|\nafter", "| a |\n|---|\nafter"),
+			("> # A\n> text", "> # A\n> text"),
+			("---\ntitle: x\n---\n# T", "---\ntitle: x\n---\n\n# T"),
+			("# A\n\n## B\n", "# A\n\n## B\n"),
+		],
+	);
+}
+
 #[test]
 fn registry() {
 	let names = super::names();
 	assert_eq!(
 		names,
 		[
+			"hard-tabs",
 			"trailing-whitespace",
+			"heading-spacing",
+			"blockquote-space",
+			"list-marker-space",
 			"arrows",
 			"list-marker",
+			"ordered-list-numbers",
+			"emphasis-marker",
+			"link-spacing",
+			"bare-urls",
+			"fence-marker",
+			"horizontal-rule",
 			"tables",
+			"heading-style",
+			"block-spacing",
 			"blank-lines",
 			"final-newline"
 		]
@@ -311,9 +543,53 @@ const PIECES: &[&str] = &[
 	"<!-- a -> b -->",
 	"    code -> x",
 	"- [ ] task -> done",
+	"#Head",
+	"##  Title ##",
+	"Title\n===",
+	">quote\n>>nested",
+	"-   item",
+	"1. a\n1. b\n7. c",
+	"_em_ and __strong__ and snake_case",
+	"[ a ](b) ![ c ](d)",
+	"see https://x.org/a. or (https://y.org)",
+	"~~~\n```\n~~~",
+	"***",
+	"text\n# H\ntext",
+	"| a |\n|---|\nafter",
+	"Name:\tvalue",
 ];
 
+/// The formatters that change what a document says, not only how it is written: they are left out of the check that
+/// the HTML stays the same.
+const CHANGE_THE_TEXT: [&str; 4] = ["trailing-whitespace", "arrows", "link-spacing", "bare-urls"];
+
+/// The HTML `text` renders to, with its runs of white space made one space, as a browser shows them, and none at the
+/// end of a code block.
+fn rendered(text: &str) -> String {
+	let mut html = String::new();
+	let options = pulldown_cmark::Options::ENABLE_TABLES
+		| pulldown_cmark::Options::ENABLE_STRIKETHROUGH
+		| pulldown_cmark::Options::ENABLE_TASKLISTS
+		| pulldown_cmark::Options::ENABLE_YAML_STYLE_METADATA_BLOCKS;
+	pulldown_cmark::html::push_html(&mut html, pulldown_cmark::Parser::new_ext(text, options));
+	html.split_whitespace()
+		.collect::<Vec<_>>()
+		.join(" ")
+		.replace(" </code></pre>", "</code></pre>")
+}
+
 proptest! {
+	/// A formatter that only changes how a document is written leaves the HTML it renders to as it was.
+	#[test]
+	fn formatters_keep_what_a_document_renders_to(pieces in prop::collection::vec(prop::sample::select(PIECES), 1..8)) {
+		let text = pieces.join("\n");
+		let d = Document::parse(&text);
+		for f in ALL.iter().filter(|f| !CHANGE_THE_TEXT.contains(&f.about().name)) {
+			let formatted = f.apply(&d, &Settings::default()).lines.join("\n");
+			prop_assert_eq!(rendered(&formatted), rendered(&text), "{} on {:?}", f.about().name, text);
+		}
+	}
+
 	/// Every formatter changes only lines that exist, and leaves what it made as it is.
 	#[test]
 	fn formatters_are_idempotent(pieces in prop::collection::vec(prop::sample::select(PIECES), 1..8)) {

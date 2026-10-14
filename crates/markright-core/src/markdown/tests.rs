@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use proptest::prelude::*;
 
 use super::anchors::slugify;
-use super::{Document, LinkKind, Marker, Reference, Table, is_external};
+use super::{BlockKind, Document, ItemMarker, LinkKind, Marker, Reference, Span, Table, is_external};
 
 fn code(d: &Document) -> Vec<bool> {
 	d.lines.iter().map(|line| line.code).collect()
@@ -269,28 +269,146 @@ fn link_texts() {
 }
 
 #[test]
-fn bullets_and_adjacent_lists() {
+fn list_items_and_adjacent_lists() {
 	let d = Document::parse("* a\n+ b\n\n---\n\n- c\n\n1. x\n   * y\n");
-	let got: Vec<(usize, usize, Marker, bool)> = d
-		.bullets
+	let got: Vec<(usize, usize, ItemMarker, bool)> = d
+		.items
 		.iter()
-		.map(|b| (b.line, b.column, b.marker, b.adjacent))
+		.map(|item| (item.line, item.column, item.marker, item.adjacent))
 		.collect();
+	let number = |value, digits| ItemMarker::Number {
+		value,
+		digits,
+		delimiter: '.',
+	};
 	assert_eq!(
 		got,
 		[
-			(1, 0, Marker::Star, true),
-			(2, 0, Marker::Plus, true),
-			(6, 0, Marker::Dash, true),
-			(9, 3, Marker::Star, false)
+			(1, 0, ItemMarker::Bullet(Marker::Star), true),
+			(2, 0, ItemMarker::Bullet(Marker::Plus), true),
+			(6, 0, ItemMarker::Bullet(Marker::Dash), true),
+			(8, 0, number(1, 1), true),
+			(9, 3, ItemMarker::Bullet(Marker::Star), false)
 		]
 	);
 	let d = Document::parse("+ a\n\n[x]: y.md\n+ b\n");
 	assert!(
-		d.bullets.iter().all(|b| !b.adjacent),
+		d.items.iter().all(|item| !item.adjacent),
 		"a definition keeps two lists apart: {:?}",
-		d.bullets
+		d.items
 	);
+}
+
+#[test]
+fn list_items_know_their_lines_spaces_and_numbers() {
+	let d = Document::parse("10) ten\n    more\n\n11)   eleven\n");
+	let got: Vec<(usize, usize, usize, usize, usize)> = d
+		.items
+		.iter()
+		.map(|item| (item.line, item.last_line, item.marker.width(), item.spaces, item.list))
+		.collect();
+	assert_eq!(
+		got,
+		[(1, 2, 3, 1, 0), (4, 4, 3, 3, 0)],
+		"the blank line after an item is not its own"
+	);
+	assert_eq!(
+		d.items[1].marker,
+		ItemMarker::Number {
+			value: 11,
+			digits: 2,
+			delimiter: ')'
+		}
+	);
+}
+
+#[test]
+fn blocks_have_kinds_lines_and_depths() {
+	let d = Document::parse("---\ntitle: x\n---\n\n# A\n\ntext\nmore\n\n> - item\n\n***\n\n    code\n\n| a |\n|---|\n");
+	let got: Vec<(BlockKind, usize, usize, usize)> = d
+		.blocks
+		.iter()
+		.map(|block| (block.kind, block.first, block.last, block.depth))
+		.collect();
+	assert_eq!(
+		got,
+		[
+			(BlockKind::Metadata, 1, 3, 0),
+			(BlockKind::Heading, 5, 5, 0),
+			(BlockKind::Paragraph, 7, 8, 0),
+			(BlockKind::BlockQuote, 10, 10, 0),
+			(BlockKind::List, 10, 10, 1),
+			(BlockKind::Rule, 12, 12, 0),
+			(BlockKind::IndentedCode, 14, 14, 0),
+			(BlockKind::Table, 16, 17, 0),
+		]
+	);
+	assert_eq!(code(&d)[..3], [true, true, true], "front matter is no prose");
+}
+
+#[test]
+fn headings_know_their_text_and_underline() {
+	let d = Document::parse("Title `code`\n===\n\n## Next ##\n");
+	let got: Vec<(&str, Option<usize>)> = d
+		.headings
+		.iter()
+		.map(|heading| (heading.text.as_str(), heading.underline))
+		.collect();
+	assert_eq!(got, [("Title code", Some(2)), ("Next", None)]);
+}
+
+#[test]
+fn fences_know_their_markers_and_closing_lines() {
+	let d = Document::parse("~~~~py\nx\n~~~~\n\n```\nopen");
+	let got: Vec<(char, usize, Option<usize>)> = d
+		.fences
+		.iter()
+		.map(|fence| (fence.marker, fence.length, fence.closing))
+		.collect();
+	assert_eq!(got, [('~', 4, Some(3)), ('`', 3, None)]);
+}
+
+#[test]
+fn emphasis_has_its_delimiters() {
+	let d = Document::parse("a _b_ and __c__ and **d\ne**\n");
+	let got: Vec<(bool, Span, Span)> = d
+		.emphasis
+		.iter()
+		.map(|emphasis| (emphasis.strong, emphasis.open.clone(), emphasis.close.clone()))
+		.collect();
+	let span = |line, columns| Span { line, columns };
+	assert_eq!(
+		got,
+		[
+			(false, span(1, 2..3), span(1, 4..5)),
+			(true, span(1, 10..12), span(1, 13..15)),
+			(true, span(1, 20..22), span(2, 1..3)),
+		]
+	);
+}
+
+#[test]
+fn inline_links_know_their_label() {
+	let d = Document::parse("[ text ](a.md) ![alt](b.png) [x\ny](c.md)\n");
+	let labels: Vec<Option<Span>> = d.links.iter().map(|link| link.label.clone()).collect();
+	assert_eq!(
+		labels,
+		[Some(Span { line: 1, columns: 1..7 }), None, None],
+		"an image has no label, and a label over two lines is not one span"
+	);
+}
+
+#[test]
+fn bare_urls_outside_links_and_code() {
+	let d = Document::parse(
+		"See https://example.com/a_b. And (https://x.org/p) [https://in.link](https://in.link) `https://code` <https://auto>\n\n    https://indented\n",
+	);
+	let got: Vec<&str> = d
+		.bare_urls
+		.iter()
+		.map(|span| &d.lines[span.line - 1].text[span.columns.clone()])
+		.collect();
+	assert_eq!(got, ["https://example.com/a_b", "https://x.org/p"]);
 }
 
 #[test]

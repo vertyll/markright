@@ -8,9 +8,21 @@ mod width;
 
 // The formatters, one per file.
 mod arrows;
+mod bare_urls;
 mod blank_lines;
+mod block_spacing;
+mod blockquote_space;
+mod emphasis_marker;
+mod fence_marker;
 mod final_newline;
+mod hard_tabs;
+mod heading_spacing;
+mod heading_style;
+mod horizontal_rule;
+mod link_spacing;
 mod list_marker;
+mod list_marker_space;
+mod ordered_list_numbers;
 mod tables;
 mod trailing_whitespace;
 
@@ -20,12 +32,25 @@ pub use settings::Settings;
 
 use fix::{by_line, each_prose_line, texts};
 
-/// Every formatter, in the order they run. Those that remove or add lines come last.
+/// Every formatter, in the order they run. Tabs go first, so the others see spaces; those that remove or add lines
+/// come last.
 pub static ALL: &[&dyn Formatter] = &[
+	&hard_tabs::HardTabs,
 	&trailing_whitespace::TrailingWhitespace,
+	&heading_spacing::HeadingSpacing,
+	&blockquote_space::BlockquoteSpace,
+	&list_marker_space::ListMarkerSpace,
 	&arrows::Arrows,
 	&list_marker::ListMarker,
+	&ordered_list_numbers::OrderedListNumbers,
+	&emphasis_marker::EmphasisMarker,
+	&link_spacing::LinkSpacing,
+	&bare_urls::BareUrls,
+	&fence_marker::FenceMarker,
+	&horizontal_rule::HorizontalRule,
 	&tables::Tables,
+	&heading_style::HeadingStyle,
+	&block_spacing::BlockSpacing,
 	&blank_lines::BlankLines,
 	&final_newline::FinalNewline,
 ];

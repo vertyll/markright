@@ -53,6 +53,17 @@
               "WARNING",
               "CAUTION"
             ]
+          },
+          "link-text": {
+            "phrases": [
+              "click here",
+              "here",
+              "link",
+              "more",
+              "read more",
+              "this",
+              "this link"
+            ]
           }
         },
         "exclusions": {
@@ -73,6 +84,18 @@
         "settings": {
           "list-marker": {
             "marker": "-"
+          },
+          "ordered-list-numbers": {
+            "numbering": "increasing"
+          },
+          "emphasis-marker": {
+            "marker": "*"
+          },
+          "fence-marker": {
+            "marker": "`"
+          },
+          "horizontal-rule": {
+            "style": "---"
           }
         },
         "exclusions": {
@@ -185,11 +208,20 @@
               "links",
               "anchors",
               "unused-definitions",
+              "reversed-links",
+              "link-text",
               "alerts",
               "blockquotes",
+              "blank-line-in-blockquote",
               "fences",
               "fence-language",
+              "code-block-style",
+              "first-heading",
+              "single-title",
               "heading-increment",
+              "heading-without-space",
+              "duplicate-headings",
+              "emphasis-as-heading",
               "image-alt",
               "table-columns",
               "line-length",
@@ -209,11 +241,20 @@
               "links",
               "anchors",
               "unused-definitions",
+              "reversed-links",
+              "link-text",
               "alerts",
               "blockquotes",
+              "blank-line-in-blockquote",
               "fences",
               "fence-language",
+              "code-block-style",
+              "first-heading",
+              "single-title",
               "heading-increment",
+              "heading-without-space",
+              "duplicate-headings",
+              "emphasis-as-heading",
               "image-alt",
               "table-columns",
               "line-length",
@@ -249,6 +290,17 @@
                 "IMPORTANT",
                 "WARNING",
                 "CAUTION"
+              ]
+            },
+            "link-text": {
+              "phrases": [
+                "click here",
+                "here",
+                "link",
+                "more",
+                "read more",
+                "this",
+                "this link"
               ]
             }
           }
@@ -323,6 +375,21 @@
               "CAUTION"
             ]
           }
+        },
+        "link-text": {
+          "description": "The settings of link-text.",
+          "$ref": "#/$defs/LinkText",
+          "default": {
+            "phrases": [
+              "click here",
+              "here",
+              "link",
+              "more",
+              "read more",
+              "this",
+              "this link"
+            ]
+          }
         }
       },
       "additionalProperties": false
@@ -393,6 +460,29 @@
             "IMPORTANT",
             "WARNING",
             "CAUTION"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "LinkText": {
+      "description": "The settings of link-text.",
+      "type": "object",
+      "properties": {
+        "phrases": {
+          "description": "The texts that say nothing about where a link leads, compared without case and without the punctuation around\nthem.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "click here",
+            "here",
+            "link",
+            "more",
+            "read more",
+            "this",
+            "this link"
           ]
         }
       },
@@ -477,11 +567,20 @@
               "links",
               "anchors",
               "unused-definitions",
+              "reversed-links",
+              "link-text",
               "alerts",
               "blockquotes",
+              "blank-line-in-blockquote",
               "fences",
               "fence-language",
+              "code-block-style",
+              "first-heading",
+              "single-title",
               "heading-increment",
+              "heading-without-space",
+              "duplicate-headings",
+              "emphasis-as-heading",
               "image-alt",
               "table-columns",
               "line-length",
@@ -522,10 +621,22 @@
           "items": {
             "type": "string",
             "enum": [
+              "hard-tabs",
               "trailing-whitespace",
+              "heading-spacing",
+              "blockquote-space",
+              "list-marker-space",
               "arrows",
               "list-marker",
+              "ordered-list-numbers",
+              "emphasis-marker",
+              "link-spacing",
+              "bare-urls",
+              "fence-marker",
+              "horizontal-rule",
               "tables",
+              "heading-style",
+              "block-spacing",
               "blank-lines",
               "final-newline"
             ]
@@ -539,10 +650,22 @@
           "items": {
             "type": "string",
             "enum": [
+              "hard-tabs",
               "trailing-whitespace",
+              "heading-spacing",
+              "blockquote-space",
+              "list-marker-space",
               "arrows",
               "list-marker",
+              "ordered-list-numbers",
+              "emphasis-marker",
+              "link-spacing",
+              "bare-urls",
+              "fence-marker",
+              "horizontal-rule",
               "tables",
+              "heading-style",
+              "block-spacing",
               "blank-lines",
               "final-newline"
             ]
@@ -556,6 +679,18 @@
           "default": {
             "list-marker": {
               "marker": "-"
+            },
+            "ordered-list-numbers": {
+              "numbering": "increasing"
+            },
+            "emphasis-marker": {
+              "marker": "*"
+            },
+            "fence-marker": {
+              "marker": "`"
+            },
+            "horizontal-rule": {
+              "style": "---"
             }
           }
         },
@@ -580,6 +715,34 @@
           "$ref": "#/$defs/ListMarker",
           "default": {
             "marker": "-"
+          }
+        },
+        "ordered-list-numbers": {
+          "description": "The settings of ordered-list-numbers.",
+          "$ref": "#/$defs/OrderedListNumbers",
+          "default": {
+            "numbering": "increasing"
+          }
+        },
+        "emphasis-marker": {
+          "description": "The settings of emphasis-marker.",
+          "$ref": "#/$defs/EmphasisMarker",
+          "default": {
+            "marker": "*"
+          }
+        },
+        "fence-marker": {
+          "description": "The settings of fence-marker.",
+          "$ref": "#/$defs/FenceMarker",
+          "default": {
+            "marker": "`"
+          }
+        },
+        "horizontal-rule": {
+          "description": "The settings of horizontal-rule.",
+          "$ref": "#/$defs/HorizontalRule",
+          "default": {
+            "style": "---"
           }
         }
       },
@@ -614,6 +777,119 @@
           "description": "`+`",
           "type": "string",
           "const": "+"
+        }
+      ]
+    },
+    "OrderedListNumbers": {
+      "description": "The settings of ordered-list-numbers.",
+      "type": "object",
+      "properties": {
+        "numbering": {
+          "description": "How the items of an ordered list are numbered.",
+          "$ref": "#/$defs/Numbering",
+          "default": "increasing"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Numbering": {
+      "description": "How the items of an ordered list are numbered.",
+      "oneOf": [
+        {
+          "description": "Each item one more than the item before it, from the number of the first.",
+          "type": "string",
+          "const": "increasing"
+        },
+        {
+          "description": "Every item with the number of the first.",
+          "type": "string",
+          "const": "same"
+        }
+      ]
+    },
+    "EmphasisMarker": {
+      "description": "The settings of emphasis-marker.",
+      "type": "object",
+      "properties": {
+        "marker": {
+          "description": "The character of emphasis and strong emphasis.",
+          "$ref": "#/$defs/Delimiter",
+          "default": "*"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Delimiter": {
+      "description": "The character emphasis is written with.",
+      "oneOf": [
+        {
+          "description": "`*text*` and `**text**`.",
+          "type": "string",
+          "const": "*"
+        },
+        {
+          "description": "`_text_` and `__text__`.",
+          "type": "string",
+          "const": "_"
+        }
+      ]
+    },
+    "FenceMarker": {
+      "description": "The settings of fence-marker.",
+      "type": "object",
+      "properties": {
+        "marker": {
+          "description": "The character of the fences of code blocks.",
+          "$ref": "#/$defs/Fence",
+          "default": "`"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Fence": {
+      "description": "The character a code fence is written with.",
+      "oneOf": [
+        {
+          "description": "```` ``` ````",
+          "type": "string",
+          "const": "`"
+        },
+        {
+          "description": "`~~~`",
+          "type": "string",
+          "const": "~"
+        }
+      ]
+    },
+    "HorizontalRule": {
+      "description": "The settings of horizontal-rule.",
+      "type": "object",
+      "properties": {
+        "style": {
+          "description": "How a horizontal rule is written.",
+          "$ref": "#/$defs/Rule",
+          "default": "---"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Rule": {
+      "description": "How a horizontal rule is written.",
+      "oneOf": [
+        {
+          "description": "`---`",
+          "type": "string",
+          "const": "---"
+        },
+        {
+          "description": "`***`",
+          "type": "string",
+          "const": "***"
+        },
+        {
+          "description": "`___`",
+          "type": "string",
+          "const": "___"
         }
       ]
     },

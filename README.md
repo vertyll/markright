@@ -7,11 +7,13 @@
 
 `markright` keeps a repository's Markdown consistent.
 
-- **Formatters fix** ASCII arrows, trailing whitespace, list markers, unaligned tables, repeated blank lines and the
-  end of the file.
-- **Linters report** broken links and anchors, unused reference definitions, malformed alerts and blockquotes, code
-  blocks left open or without a language, skipped heading levels, images without alternative text, table rows with
-  extra cells, long lines and documents missing from the index.
+- **Formatters fix** tabs, trailing whitespace, how headings, lists, emphasis, code fences, horizontal rules and
+  blockquotes are written, the numbers of ordered lists, the blank lines around blocks and in a row, URLs and spaces
+  in links, ASCII arrows, unaligned tables and the end of the file.
+- **Linters report** broken links and anchors, unused or reversed references, links that say nothing, malformed
+  alerts and blockquotes, code blocks left open, indented or without a language, missing, repeated or skipped
+  headings, emphasis in place of a heading, images without alternative text, table rows with extra cells, long lines
+  and documents missing from the index.
 
 Every rule, with an example, is in [Rules](docs/rules.md). The documentation is also a site, with a playground that
 runs markright on a document in the browser: <https://vertyll.github.io/markright/>.

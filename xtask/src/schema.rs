@@ -51,7 +51,7 @@ pub(crate) struct Setting {
 	pub(crate) rule: &'static str,
 	/// Its key under the rule.
 	pub(crate) key: String,
-	/// What it means, as a sentence.
+	/// What it means, as a sentence on one line.
 	pub(crate) description: String,
 	/// Its default.
 	pub(crate) default: Value,
@@ -81,7 +81,13 @@ pub(crate) fn settings(root: &Path) -> io::Result<Vec<Setting>> {
 					section,
 					rule,
 					key,
-					description: property["description"].as_str().unwrap_or_default().to_owned(),
+					// A description written over several lines of a doc comment reads as one sentence.
+					description: property["description"]
+						.as_str()
+						.unwrap_or_default()
+						.split_whitespace()
+						.collect::<Vec<_>>()
+						.join(" "),
 					default: property["default"].clone(),
 				});
 			}

@@ -95,6 +95,7 @@ every formatter and linter in [Rules](docs/rules.md).
 - [Contents](CONTENTS.md) – every document in the repository, the module it belongs to, and what it covers.
 - [Glossary](GLOSSARY.md) – every term the docs use, and where it is explained.
 - [Standards](STANDARDS.md) – the specifications the tool follows.
+- [Contributing](CONTRIBUTING.md) – reporting a bug, proposing a rule, and sending a change.
 
 ## License
 

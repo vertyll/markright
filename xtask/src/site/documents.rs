@@ -34,14 +34,15 @@ struct Place {
 }
 
 /// The documents with a place of their own; the mechanisms follow them in a section.
-static PLACES: [Place; 7] = [
+static PLACES: [Place; 8] = [
 	place("README.md", "docs/_index.md", Some("Getting started"), 1),
 	place("docs/rules.md", "docs/rules.md", None, 2),
 	place("docs/configuration.md", "docs/configuration.md", None, 5),
 	place("docs/architecture.md", "docs/architecture.md", None, 6),
 	place("docs/development.md", "docs/development.md", None, 8),
-	place("GLOSSARY.md", "docs/glossary.md", None, 9),
-	place("STANDARDS.md", "docs/standards.md", None, 10),
+	place("CONTRIBUTING.md", "docs/contributing.md", None, 9),
+	place("GLOSSARY.md", "docs/glossary.md", None, 10),
+	place("STANDARDS.md", "docs/standards.md", None, 11),
 ];
 
 const fn place(source: &'static str, target: &'static str, title: Option<&'static str>, weight: usize) -> Place {

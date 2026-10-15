@@ -48,43 +48,43 @@ const EXAMPLE_GUIDE: (&str, &str) = ("docs/guide.md", "# Guide\n\n## Install\n")
 
 /// Every linter, in the order they run.
 pub static ALL: &[Linter] = &[
-	Linter::document(&links::Links),
-	Linter::document(&anchors::Anchors),
-	Linter::document(&unused_definitions::UnusedDefinitions),
-	Linter::document(&duplicate_definitions::DuplicateDefinitions),
-	Linter::document(&reversed_links::ReversedLinks),
-	Linter::document(&link_text::LinkText),
-	Linter::document(&alerts::Alerts),
-	Linter::document(&blockquotes::Blockquotes),
-	Linter::document(&blank_line_in_blockquote::BlankLineInBlockquote),
-	Linter::document(&fences::Fences),
-	Linter::document(&fence_language::FenceLanguage),
-	Linter::document(&code_block_style::CodeBlockStyle),
-	Linter::document(&first_heading::FirstHeading),
-	Linter::document(&single_title::SingleTitle),
-	Linter::document(&heading_increment::HeadingIncrement),
-	Linter::document(&heading_without_space::HeadingWithoutSpace),
-	Linter::document(&duplicate_headings::DuplicateHeadings),
-	Linter::document(&heading_punctuation::HeadingPunctuation),
-	Linter::document(&emphasis_as_heading::EmphasisAsHeading),
-	Linter::document(&list_indent::ListIndent),
-	Linter::document(&image_alt::ImageAlt),
-	Linter::document(&table_columns::TableColumns),
-	Linter::document(&line_length::LineLength),
-	Linter::repository(&index::Index),
-	Linter::repository(&readme_links::ReadmeLinks),
+    Linter::document(&links::Links),
+    Linter::document(&anchors::Anchors),
+    Linter::document(&unused_definitions::UnusedDefinitions),
+    Linter::document(&duplicate_definitions::DuplicateDefinitions),
+    Linter::document(&reversed_links::ReversedLinks),
+    Linter::document(&link_text::LinkText),
+    Linter::document(&alerts::Alerts),
+    Linter::document(&blockquotes::Blockquotes),
+    Linter::document(&blank_line_in_blockquote::BlankLineInBlockquote),
+    Linter::document(&fences::Fences),
+    Linter::document(&fence_language::FenceLanguage),
+    Linter::document(&code_block_style::CodeBlockStyle),
+    Linter::document(&first_heading::FirstHeading),
+    Linter::document(&single_title::SingleTitle),
+    Linter::document(&heading_increment::HeadingIncrement),
+    Linter::document(&heading_without_space::HeadingWithoutSpace),
+    Linter::document(&duplicate_headings::DuplicateHeadings),
+    Linter::document(&heading_punctuation::HeadingPunctuation),
+    Linter::document(&emphasis_as_heading::EmphasisAsHeading),
+    Linter::document(&list_indent::ListIndent),
+    Linter::document(&image_alt::ImageAlt),
+    Linter::document(&table_columns::TableColumns),
+    Linter::document(&line_length::LineLength),
+    Linter::repository(&index::Index),
+    Linter::repository(&readme_links::ReadmeLinks),
 ];
 
 /// The name of every linter, in the order they run.
 #[must_use]
 pub fn names() -> Vec<&'static str> {
-	ALL.iter().map(|linter| linter.about().name).collect()
+    ALL.iter().map(|linter| linter.about().name).collect()
 }
 
 /// The linter called `name`.
 #[must_use]
 pub fn find(name: &str) -> Option<Linter> {
-	ALL.iter().copied().find(|linter| linter.about().name == name)
+    ALL.iter().copied().find(|linter| linter.about().name == name)
 }
 
 #[cfg(test)]

@@ -8,20 +8,20 @@ use crate::{formatters, linters};
 
 /// The version, which must be the one this release reads.
 pub(super) fn version(_: &mut SchemaGenerator) -> Schema {
-	json_schema!({ "type": "string", "const": VERSION })
+    json_schema!({ "type": "string", "const": VERSION })
 }
 
 /// A list of linter names, each from the registry, each once.
 pub(super) fn linter_names(_: &mut SchemaGenerator) -> Schema {
-	names(&linters::names())
+    names(&linters::names())
 }
 
 /// A list of formatter names, each from the registry, each once.
 pub(super) fn formatter_names(_: &mut SchemaGenerator) -> Schema {
-	names(&formatters::names())
+    names(&formatters::names())
 }
 
 /// A list of `names`, each once.
 fn names(names: &[&str]) -> Schema {
-	json_schema!({ "type": "array", "items": { "type": "string", "enum": names }, "uniqueItems": true })
+    json_schema!({ "type": "array", "items": { "type": "string", "enum": names }, "uniqueItems": true })
 }

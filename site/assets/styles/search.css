@@ -18,6 +18,10 @@
   flex-direction: column;
 }
 
+html:has(.search[open]) {
+  overflow: hidden;
+}
+
 .search::backdrop {
   background: rgb(0 0 0 / 35%);
 }
@@ -59,6 +63,7 @@
   margin: 0;
   padding: 0.5rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
   list-style: none;
 }
 

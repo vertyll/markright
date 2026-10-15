@@ -1,5 +1,6 @@
 //! The anchors linter: a `#fragment` names a heading or an HTML id of its document.
 
+use super::settings::targeted;
 use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, escapes, targets};
 use crate::issue::Finding;
 use crate::markdown::Document;
@@ -26,6 +27,7 @@ impl DocumentLinter for Anchors {
             let Some(anchor) = &target.anchor else { return false };
             let file = target.document(path);
             !escapes(file)
+                && targeted(&context.settings.anchors.targets, file)
                 && context
                     .repo
                     .docs

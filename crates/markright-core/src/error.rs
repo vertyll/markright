@@ -44,6 +44,15 @@ pub enum Error {
         /// Why.
         source: io::Error,
     },
+    /// A path given to the run names a file that is not one of the repository's documents.
+    #[error(
+        "{path} is not a document: markright reads the Markdown files Git tracks or would add, outside build and \
+         dependency directories and documents.exclude"
+    )]
+    NotADocument {
+        /// The path, relative to the root.
+        path: String,
+    },
     /// Writing a formatted document failed.
     #[error("writing {path}: {source}")]
     Write {

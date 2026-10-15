@@ -75,9 +75,10 @@ fn lowercase_first(text: &str) -> String {
         .unwrap_or_default()
 }
 
-/// A setting's default as a table cell shows it: each value in a code span.
+/// A setting's default as a table cell shows it: each value in a code span, and an empty list as none.
 pub(crate) fn default(value: &Value) -> String {
     match value {
+        Value::Array(items) if items.is_empty() => "none".to_owned(),
         Value::Array(items) => items.iter().map(default).collect::<Vec<_>>().join(", "),
         Value::String(text) => code_span(text),
         other => code_span(&other.to_string()),

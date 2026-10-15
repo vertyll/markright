@@ -15,7 +15,7 @@ use markright_core::output::{self, Rule, Streams};
 use markright_core::runner::{Mode, Runner};
 use markright_core::{formatters, linters, markdown};
 
-use crate::cli::{Check, Cli, Command, ConfigCommand, Found};
+use crate::cli::{Check, Cli, Command, ConfigCommand, Found, Selection};
 
 /// How the command ends.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -110,16 +110,26 @@ fn execute(
             writeln!(stdout, "markright {}", env!("CARGO_PKG_VERSION"))?;
             return Ok(Exit::Clean);
         }
-        Command::Check(Check { target, .. })
-        | Command::Fmt(target)
+        Command::Check(Check {
+            selection: Selection { target, .. },
+            ..
+        })
+        | Command::Fmt(Selection { target, .. })
         | Command::Linters(target)
         | Command::Formatters(target)
         | Command::Config(ConfigCommand::Verify(target)) => target,
     };
-    let Found { config, path } = target.configuration()?;
+    let root = target.root();
+    let Found { config, path } = target.configuration(&root)?;
     match command {
-        Command::Check(Check { fix, .. }) => check(&target.root, &config, *fix, stdout, stderr, stop),
-        Command::Fmt(_) => format(&target.root, &config, stdout, stop),
+        Command::Check(Check { fix, selection }) => {
+            let paths = selection.relative(&root)?;
+            check(&root, &paths, &config, *fix, stdout, stderr, stop)
+        }
+        Command::Fmt(selection) => {
+            let paths = selection.relative(&root)?;
+            format(&root, &paths, &config, stdout, stop)
+        }
         Command::Linters(_) => {
             let rules = linters::ALL
                 .iter()
@@ -152,11 +162,12 @@ fn verified(stdout: &mut dyn Write, path: Option<&Path>) -> Result<Exit, Failure
     Ok(Exit::Clean)
 }
 
-/// `markright check`: reports the issues in every configured format, and the exclusions that matched nothing. With
-/// `fix`, it first writes what the formatters change, lists those files on the standard error, so a report on the
-/// standard output stays as its format writes it, and reports only what is left.
+/// `markright check`: reports the issues of the documents at `paths` in every configured format, and the exclusions
+/// that matched nothing. With `fix`, it first writes what the formatters change, lists those files on the standard
+/// error, so a report on the standard output stays as its format writes it, and reports only what is left.
 fn check(
     root: &Path,
+    paths: &[String],
     config: &Config,
     fix: bool,
     stdout: &mut dyn Write,
@@ -164,7 +175,7 @@ fn check(
     stop: &AtomicBool,
 ) -> Result<Exit, Failure> {
     let mode = if fix { Mode::Fix } else { Mode::Lint };
-    let report = Runner { root, config, mode }.run(stop)?;
+    let report = Runner { root, config, mode }.run_on(paths, stop)?;
     for path in &report.formatted {
         writeln!(stderr, "formatted {path}")?;
     }
@@ -184,14 +195,20 @@ fn check(
     })
 }
 
-/// `markright fmt`: applies the formatters and lists the files they changed.
-fn format(root: &Path, config: &Config, stdout: &mut dyn Write, stop: &AtomicBool) -> Result<Exit, Failure> {
+/// `markright fmt`: applies the formatters to the documents at `paths` and lists the files they changed.
+fn format(
+    root: &Path,
+    paths: &[String],
+    config: &Config,
+    stdout: &mut dyn Write,
+    stop: &AtomicBool,
+) -> Result<Exit, Failure> {
     let report = Runner {
         root,
         config,
         mode: Mode::Format,
     }
-    .run(stop)?;
+    .run_on(paths, stop)?;
     for path in &report.formatted {
         writeln!(stdout, "formatted {path}")?;
     }

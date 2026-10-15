@@ -12,7 +12,7 @@ pub struct Pattern(Regex);
 
 impl Pattern {
     /// Whether the expression matches anywhere in `text`.
-    pub(super) fn matches(&self, text: &str) -> bool {
+    pub(crate) fn matches(&self, text: &str) -> bool {
         self.0.is_match(text)
     }
 
@@ -51,6 +51,8 @@ impl PartialEq for Pattern {
         self.as_str() == other.as_str()
     }
 }
+
+impl Eq for Pattern {}
 
 impl JsonSchema for Pattern {
     fn schema_name() -> Cow<'static, str> {

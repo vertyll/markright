@@ -13,12 +13,15 @@ use crate::issue::{Finding, Issue};
 use crate::linters::{self, Context, Kind, Linter, Repo};
 use crate::markdown::Document;
 
-/// Formats the documents at `paths` in `files` and, unless in [`Mode::Format`], lints the result. It reads `files` and never
-/// writes to them, so it works the same on disk and in memory. It spreads the documents over the cores and stops
-/// once `stop` is set.
+/// Formats the documents at `paths` in `files` and, unless in [`Mode::Format`], lints the result, reporting and
+/// keeping the changes of the `selected` ones only: every document is read, so links and anchors into the others
+/// resolve. The warnings for exclusions that matched nothing come only when every document is selected. It reads
+/// `files` and never writes to them, so it works the same on disk and in memory. It spreads the documents over the
+/// cores and stops once `stop` is set.
 pub(crate) fn check(
     files: &dyn Files,
     paths: &[String],
+    selected: &[String],
     config: &Config,
     mode: Mode,
     stop: &AtomicBool,
@@ -29,19 +32,29 @@ pub(crate) fn check(
         issues: Vec::new(),
         used: HashSet::new(),
     };
-    let Formatting { documents, fixed } = pass.format_all(files, paths, stop)?;
+    let Formatting { documents, mut fixed } = pass.format_all(files, paths, stop)?;
     let repo = Repo::new(files, documents);
     if mode != Mode::Format {
-        pass.lint(&repo, paths, stop)?;
+        pass.lint(&repo, selected, stop)?;
     }
+    let everything = selected.len() == paths.len();
     let mut issues = pass.issues;
+    if !everything {
+        let chosen: HashSet<&str> = selected.iter().map(String::as_str).collect();
+        issues.retain(|issue| chosen.contains(issue.path.as_str()));
+        fixed.retain(|path, _| chosen.contains(path.as_str()));
+    }
     issues.sort_by(|a, b| (&a.path, a.line, &a.message).cmp(&(&b.path, b.line, &b.message)));
-    let unused = config
-        .watched()
-        .into_iter()
-        .filter(|watched| !pass.used.contains(&watched.key))
-        .map(|watched| watched.warning)
-        .collect();
+    let unused = if everything {
+        config
+            .watched()
+            .into_iter()
+            .filter(|watched| !pass.used.contains(&watched.key))
+            .map(|watched| watched.warning)
+            .collect()
+    } else {
+        Vec::new()
+    };
     Ok(Checked {
         issues,
         fixed,

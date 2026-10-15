@@ -41,11 +41,14 @@ cargo install --locked --git https://github.com/vertyll/markright --tag v0.1.0 m
 markright fmt
 markright check --fix
 markright check
+markright check README.md docs
 ```
 
-`fmt` applies the formatters in place. `check --fix` does the same and reports what they cannot fix. `check` changes
-nothing and reports every issue, the lines a formatter would change included, one per line, and exits with `1` when
-there is any; it is the one CI runs:
+From the root of a repository, each command takes every document, as `markright check .` does; given files or
+directories, it takes only those, while still resolving links and anchors against the whole repository. `fmt` applies
+the formatters in place. `check --fix` does the same and reports what they cannot fix. `check` changes nothing and
+reports every issue, the lines a formatter would change included, one per line, and exits with `1` when there is any;
+it is the one CI runs:
 
 ```text
 docs/guide.md:3: ASCII arrow or missing space around an arrow (arrows)

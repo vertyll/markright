@@ -10,6 +10,13 @@
       "type": "string",
       "const": "1"
     },
+    "documents": {
+      "description": "Which files of the repository are its documents.",
+      "$ref": "#/$defs/Documents",
+      "default": {
+        "exclude": []
+      }
+    },
     "output": {
       "description": "Where markright check writes issues; text to stdout when no format is set.",
       "$ref": "#/$defs/Output",
@@ -64,6 +71,12 @@
               "this",
               "this link"
             ]
+          },
+          "links": {
+            "targets": []
+          },
+          "anchors": {
+            "targets": []
           }
         },
         "exclusions": {
@@ -111,6 +124,27 @@
     "version"
   ],
   "$defs": {
+    "Documents": {
+      "description": "Which of the Markdown files Git lists are documents of the repository.",
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "description": "Files that are not documents: never formatted or linted, and the anchors of a link into one are not checked.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Pattern"
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "Pattern": {
+      "description": "A regular expression, matched anywhere.",
+      "type": "string",
+      "format": "regex",
+      "minLength": 1
+    },
     "Output": {
       "description": "Where `markright check` writes issues.",
       "type": "object",
@@ -308,6 +342,12 @@
                 "this",
                 "this link"
               ]
+            },
+            "links": {
+              "targets": []
+            },
+            "anchors": {
+              "targets": []
             }
           }
         },
@@ -395,6 +435,20 @@
               "this",
               "this link"
             ]
+          }
+        },
+        "links": {
+          "description": "The settings of links.",
+          "$ref": "#/$defs/Links",
+          "default": {
+            "targets": []
+          }
+        },
+        "anchors": {
+          "description": "The settings of anchors.",
+          "$ref": "#/$defs/Anchors",
+          "default": {
+            "targets": []
           }
         }
       },
@@ -494,6 +548,36 @@
       },
       "additionalProperties": false
     },
+    "Links": {
+      "description": "The settings of links.",
+      "type": "object",
+      "properties": {
+        "targets": {
+          "description": "Paths a relative link is checked against, when any are set; a link to another path is not checked.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Pattern"
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "Anchors": {
+      "description": "The settings of anchors.",
+      "type": "object",
+      "properties": {
+        "targets": {
+          "description": "Documents a link's fragment is checked against, when any are set; a fragment into another document is not\nchecked.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Pattern"
+          },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
     "LinterExclusions": {
       "description": "Which documents no linter reports on and which issues to drop.",
       "type": "object",
@@ -529,12 +613,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "Pattern": {
-      "description": "A regular expression, matched anywhere.",
-      "type": "string",
-      "format": "regex",
-      "minLength": 1
     },
     "ExclusionRule": {
       "description": "Drops an issue that matches every field set; at least two of path or path-except, linters and text.",

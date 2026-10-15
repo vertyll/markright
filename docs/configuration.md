@@ -1,7 +1,9 @@
 # Configuration
 
-`markright` reads its configuration from the root it checks: `.markright.yaml`, in YAML, or `.markright.toml`, in
-TOML, whichever the repository prefers; a root that holds both is an error. `--config` names another file, read as
+`markright` reads its configuration from the root of the repository: `.markright.yaml`, in YAML, or
+`.markright.toml`, in TOML, whichever the repository prefers; a root that holds both is an error. The root is the
+nearest directory, from the current one up, that holds one of those files or `.git`, so a command run in a
+subdirectory reads the same configuration; `--root` names it instead. `--config` names another file, read as
 TOML when its name ends in `.toml` and as YAML otherwise. Every repository that uses the tool keeps one, even when it
 sets nothing beyond the defaults, so what runs is visible where the documents are and a change of defaults in a new
 version shows up as a decision in the file.
@@ -52,6 +54,9 @@ Every key:
 ```yaml
 version: "1"
 
+documents:
+  exclude: []
+
 output:
   formats:
     text:
@@ -77,6 +82,10 @@ linters:
       types: [NOTE, TIP, IMPORTANT, WARNING, CAUTION]
     link-text:
       phrases: [click here, here, link, more, read more, this, this link]
+    links:
+      targets: []
+    anchors:
+      targets: []
   exclusions:
     warn-unused: true
     paths:
@@ -115,6 +124,9 @@ The same in TOML:
 ```toml
 version = "1"
 
+[documents]
+exclude = []
+
 [output.formats.text]
 path = "stdout"
 
@@ -144,6 +156,12 @@ types = ["NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"]
 
 [linters.settings.link-text]
 phrases = ["click here", "here", "link", "more", "read more", "this", "this link"]
+
+[linters.settings.links]
+targets = []
+
+[linters.settings.anchors]
+targets = []
 
 [linters.exclusions]
 warn-unused = true
@@ -201,6 +219,8 @@ makes of each. The names are in [Rules](rules.md).
 | `formatters.settings.emphasis-marker.marker`         | the character of emphasis and strong emphasis                                                                      | `*`                                                                    |
 | `formatters.settings.fence-marker.marker`            | the character of the fences of code blocks                                                                         | `` ` ``                                                                |
 | `formatters.settings.horizontal-rule.style`          | how a horizontal rule is written                                                                                   | `---`                                                                  |
+| `linters.settings.links.targets`                     | paths a relative link is checked against, when any are set; a link to another path is not checked                  | none                                                                   |
+| `linters.settings.anchors.targets`                   | documents a link's fragment is checked against, when any are set; a fragment into another document is not checked  | none                                                                   |
 | `linters.settings.link-text.phrases`                 | the texts that say nothing about where a link leads, compared without case and without the punctuation around them | `click here`, `here`, `link`, `more`, `read more`, `this`, `this link` |
 | `linters.settings.alerts.types`                      | allowed alert types                                                                                                | `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, `CAUTION`                       |
 | `linters.settings.line-length.max`                   | the longest line allowed, in characters                                                                            | `120`                                                                  |
@@ -211,6 +231,34 @@ makes of each. The names are in [Rules](rules.md).
 <!-- /markright:settings -->
 
 Paths in the settings are relative to the root.
+
+## Documents
+
+`documents.exclude` takes files out of the repository's documents altogether: no formatter or linter looks at them,
+`index` does not ask for them, and the anchors of a link into one are not checked, though the file it names must exist.
+It suits generated or vendored Markdown that is neither yours to fix nor a target your links rely on:
+
+```toml
+[documents]
+exclude = ['^vendor/', '^CHANGELOG\.md$']
+```
+
+To keep a file as a link target while leaving it unformatted or unlinted, exclude it in `formatters` or `linters`
+below instead.
+
+## Link targets
+
+Links and anchors are checked against every document of the repository. `linters.settings.links.targets` and
+`linters.settings.anchors.targets` narrow that, for a repository that links to files it does not keep correct, such as
+a generated changelog whose headings change with every release:
+
+```toml
+[linters.settings.anchors]
+targets = ['^docs/', '^README\.md$']
+```
+
+A link to a path no target matches is not checked; the document holding the link still is. These are settings of the
+file, not options of the command, so a document gets the same issues however `markright` is run.
 
 ## Exclusions
 

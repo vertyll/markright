@@ -20,9 +20,16 @@ repositories.
 | `markright version`       | prints the version; `--version` does the same                                                                       | `0`                        |
 | `markright help`          | prints the commands and options; `--help` does the same, and `markright help check` explains one command            | `0`                        |
 
-Each takes an optional root, the current directory by default, and `--config` with another configuration file. A
-configuration or repository that cannot be read, or a run interrupted with Ctrl+C, ends any command with exit code
-`2`.
+`check` and `fmt` take the documents under the current directory, or only the documents and directories given after
+them, such as `markright check README.md docs`; run from the root, `markright check` and `markright check .` take
+every document. Paths are relative to the current directory and must lie in the repository. Every document is still
+read, so links and anchors into the others resolve, but only the ones given are reported and rewritten. A file that is
+not one of the repository's documents, such as one Git ignores, stops the command.
+
+The root of the repository is the nearest directory, from the current one up, that holds a configuration file or
+`.git`; `--root` names it instead, and then `check` and `fmt` without paths take the whole of it. `--config` names
+another configuration file. A configuration or repository that cannot be read, a path that cannot be taken, or a run
+interrupted with Ctrl+C, ends any command with exit code `2`.
 
 ## Formatters
 

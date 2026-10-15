@@ -1,5 +1,6 @@
 //! The links linter: relative links lead to files inside the repository, and every link has a target and text.
 
+use super::settings::targeted;
 use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, escapes, targets};
 use crate::issue::Finding;
 use crate::markdown::{Document, LinkKind};
@@ -22,6 +23,9 @@ impl DocumentLinter for Links {
         let mut out = Vec::new();
         for target in targets(path, document) {
             let Some(file) = &target.file else { continue };
+            if !escapes(file) && !targeted(&context.settings.links.targets, file) {
+                continue;
+            }
             if escapes(file) {
                 out.push(Finding::new(
                     path,

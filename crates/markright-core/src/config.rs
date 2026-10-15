@@ -42,6 +42,9 @@ pub struct Config {
     /// The configuration format version.
     #[schemars(schema_with = "schema::version")]
     pub version: String,
+    /// Which files of the repository are its documents.
+    #[serde(default)]
+    pub documents: Documents,
     /// Where markright check writes issues; text to stdout when no format is set.
     #[serde(default)]
     pub output: Output,
@@ -51,6 +54,15 @@ pub struct Config {
     /// The formatters that run, their settings and exclusions.
     #[serde(default)]
     pub formatters: Formatters,
+}
+
+/// Which of the Markdown files Git lists are documents of the repository.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Documents {
+    /// Files that are not documents: never formatted or linted, and the anchors of a link into one are not checked.
+    #[serde(default)]
+    pub exclude: Vec<Pattern>,
 }
 
 /// The linters that run, their settings and which issues to drop.
@@ -115,6 +127,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             version: VERSION.to_owned(),
+            documents: Documents::default(),
             output: Output::default(),
             linters: Linters::default(),
             formatters: Formatters::default(),
@@ -196,6 +209,12 @@ impl Config {
         .map_err(invalid)?;
         config.linters.exclusions.check(&linters).map_err(invalid)?;
         Ok(config)
+    }
+
+    /// Whether the Markdown file at `path` is a document of the repository, as `documents.exclude` decides.
+    #[must_use]
+    pub fn is_document(&self, path: &str) -> bool {
+        !self.documents.exclude.iter().any(|pattern| pattern.matches(path))
     }
 
     /// Whether the linter called `name` runs.

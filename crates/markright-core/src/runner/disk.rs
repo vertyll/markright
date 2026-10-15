@@ -59,9 +59,26 @@ impl Runner<'_> {
     ///
     /// Returns why the documents could not be listed, read or written, or [`Error::Stopped`].
     pub fn run(&self, stop: &AtomicBool) -> Result<Report, Error> {
-        let paths = discover::markdown(self.root, stop)?;
+        self.run_on(&[String::new()], stop)
+    }
+
+    /// Does what [`run`](Self::run) does, but reports on and writes only the documents at `paths` and under them:
+    /// each a document or a directory, relative to the root, with forward slashes, and empty for the root itself.
+    /// Every document is still read, so links and anchors into the others resolve; the warnings for exclusions that
+    /// matched nothing come only when the paths take in every document.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::NotADocument`] for a file in `paths` that is not one of the repository's documents, why the
+    /// documents could not be listed, read or written, or [`Error::Stopped`].
+    pub fn run_on(&self, paths: &[String], stop: &AtomicBool) -> Result<Report, Error> {
+        let documents: Vec<String> = discover::markdown(self.root, stop)?
+            .into_iter()
+            .filter(|path| self.config.is_document(path))
+            .collect();
         let disk = open(self.root)?;
-        let checked = check(&disk, &paths, self.config, self.mode, stop)?;
+        let selected = select(&disk, &documents, paths)?;
+        let checked = check(&disk, &documents, &selected, self.config, self.mode, stop)?;
         if self.mode == Mode::Lint {
             return Ok(Report {
                 issues: checked.issues,
@@ -81,6 +98,25 @@ impl Runner<'_> {
             unused_exclusions: checked.unused_exclusions,
         })
     }
+}
+
+/// The `documents` at or under `paths`, in the order of `documents`. A path naming a file that is no document is an
+/// error, so a typo or an ignored file is not passed over in silence; a directory without documents selects none.
+fn select(disk: &Disk, documents: &[String], paths: &[String]) -> Result<Vec<String>, Error> {
+    let within = |document: &str, path: &str| {
+        path.is_empty() || document == path || document.strip_prefix(path).is_some_and(|rest| rest.starts_with('/'))
+    };
+    for path in paths {
+        let found = documents.iter().any(|document| within(document, path));
+        if !found && !path.is_empty() && disk.0.is_file(path) {
+            return Err(Error::NotADocument { path: path.clone() });
+        }
+    }
+    Ok(documents
+        .iter()
+        .filter(|document| paths.iter().any(|path| within(document, path)))
+        .cloned()
+        .collect())
 }
 
 /// The repository at `root`, opened for reading and writing inside it only.

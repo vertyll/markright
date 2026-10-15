@@ -151,16 +151,11 @@ pre {
 /* Tiles that lead to other pages: a title, a line on what is there, and an arrow that moves under the pointer. */
 .tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
   margin: 1rem 0 0;
   padding: 0;
   list-style: none;
-}
-
-/* The pages to read next stand one under the other, in the order a reader takes them. */
-.next .tiles {
-  grid-template-columns: minmax(0, 1fr);
 }
 
 .tile-link {

@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 
 use regex::Regex;
-use unicode_properties::{GeneralCategoryGroup, UnicodeGeneralCategory};
+use unicode_properties::{GeneralCategory, GeneralCategoryGroup, UnicodeGeneralCategory};
 
 static HTML_ID: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"<[A-Za-z][^>]*?[\t\n\f\r ](?:id|name)[\t\n\f\r ]*=[\t\n\f\r ]*["']([^"']+)["']"#)
@@ -45,22 +45,28 @@ impl Anchors {
     }
 }
 
-/// The anchor GitHub derives from a heading's text: lowercased, with letters, digits, `-` and `_` kept, spaces turned
+/// The anchor GitHub derives from a heading's text: lowercased, with its word characters and `-` kept, spaces turned
 /// into `-`, and everything else dropped. The suffix of a repeated heading is not added.
 pub(super) fn slugify(text: &str) -> String {
     text.chars()
         .flat_map(char::to_lowercase)
         .filter_map(|c| match c {
             ' ' => Some('-'),
-            '-' | '_' => Some(c),
-            _ if matches!(
-                c.general_category_group(),
-                GeneralCategoryGroup::Letter | GeneralCategoryGroup::Number
-            ) =>
-            {
-                Some(c)
-            }
+            '-' => Some(c),
+            _ if is_word(c) => Some(c),
             _ => None,
         })
         .collect()
+}
+
+/// A word character as GitHub's slugs keep it, Unicode's `\p{Word}`: a letter or anything alphabetic, a mark such as a
+/// combining accent, a decimal digit, or connector punctuation such as `_`. A digit of another kind, as in `²` or
+/// `½`, is dropped.
+fn is_word(c: char) -> bool {
+    c.is_alphabetic()
+        || c.general_category_group() == GeneralCategoryGroup::Mark
+        || matches!(
+            c.general_category(),
+            GeneralCategory::DecimalNumber | GeneralCategory::ConnectorPunctuation
+        )
 }

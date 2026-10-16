@@ -36,6 +36,12 @@ fn slugs() {
         ("`<b>` and `_x_`", "b-and-_x_"),
         ("Escaped \\* star", "escaped--star"),
         ("Fish &amp; chips", "fish--chips"),
+        ("Cafe\u{301} au lait", "cafe\u{301}-au-lait"),
+        ("x² and ½ cup", "x-and--cup"),
+        ("Step ① first", "step--first"),
+        ("Chapter Ⅻ", "chapter-ⅻ"),
+        ("tie‿bar", "tie‿bar"),
+        ("Tab\tand\u{a0}space", "tabandspace"),
     ];
     for (heading, want) in cases {
         let d = Document::parse(&format!("# {heading}\n"));

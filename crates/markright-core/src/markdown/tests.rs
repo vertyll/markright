@@ -323,6 +323,25 @@ fn list_items_know_their_lines_spaces_and_numbers() {
 }
 
 #[test]
+fn a_list_ends_before_the_definitions_under_it() {
+    let d = Document::parse("- a\n- b\n\n[a]: https://a.example\n[b]: https://b.example\n");
+    let lists: Vec<(usize, usize)> = d
+        .blocks
+        .iter()
+        .filter(|block| block.kind == BlockKind::List)
+        .map(|block| (block.first, block.last))
+        .collect();
+    assert_eq!(lists, [(1, 2)]);
+    let items: Vec<(usize, usize)> = d.items.iter().map(|item| (item.line, item.last_line)).collect();
+    assert_eq!(items, [(1, 1), (2, 2)]);
+    assert_eq!(d.definitions.len(), 2);
+
+    let inside = Document::parse("- a\n\n  [a]: https://a.example\n");
+    let items: Vec<(usize, usize)> = inside.items.iter().map(|item| (item.line, item.last_line)).collect();
+    assert_eq!(items, [(1, 3)], "an indented definition belongs to its item");
+}
+
+#[test]
 fn blocks_have_kinds_lines_and_depths() {
     let d = Document::parse("---\ntitle: x\n---\n\n# A\n\ntext\nmore\n\n> - item\n\n***\n\n    code\n\n| a |\n|---|\n");
     let got: Vec<(BlockKind, usize, usize, usize)> = d

@@ -462,6 +462,10 @@ fn block_spacing() {
             ("> # A\n> text", "> # A\n> text"),
             ("---\ntitle: x\n---\n# T", "---\ntitle: x\n---\n\n# T"),
             ("# A\n\n## B\n", "# A\n\n## B\n"),
+            (
+                "- a\n\n[a]: https://a.example\n[b]: https://b.example\n",
+                "- a\n\n[a]: https://a.example\n[b]: https://b.example\n",
+            ),
         ],
     );
 }

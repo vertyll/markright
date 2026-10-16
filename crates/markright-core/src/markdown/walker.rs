@@ -621,6 +621,7 @@ impl<'a> Walker<'a> {
             definitions.entry(label.clone()).or_insert(definition);
         }
         let spans: Vec<&Range<usize>> = written.iter().map(|definition| &definition.span).collect();
+        self.end_before_definitions(&spans);
         let duplicate_definitions = self.duplicate_definitions(&spans, &definitions);
         let items = self.mark_adjacent(&spans);
         let bare_urls = self.bare_urls();
@@ -663,6 +664,37 @@ impl<'a> Walker<'a> {
             undefined_references,
             lazy_lines: self.lazy_lines,
             unclosed_fence: self.unclosed_fence,
+        }
+    }
+
+    /// Ends every block and list item before a definition written at the start of a line: the parser counts the
+    /// definitions under a list as part of its last item, though a definition there, not indented, cannot belong to
+    /// it.
+    fn end_before_definitions(&mut self, definitions: &[&Range<usize>]) {
+        let lines: Vec<&str> = self.source.split('\n').collect();
+        let starts: Vec<usize> = definitions
+            .iter()
+            .map(|span| self.index.line(span.start))
+            .filter(|&line| lines.get(line).is_some_and(|text| text.starts_with('[')))
+            .map(|line| line + 1)
+            .collect();
+        let end_before = |first: usize, last: usize| {
+            starts
+                .iter()
+                .filter(|&&start| first < start && start <= last)
+                .min()
+                .map_or(last, |&start| {
+                    (first..start)
+                        .rev()
+                        .find(|&line| !lines[line - 1].trim().is_empty())
+                        .unwrap_or(first)
+                })
+        };
+        for block in &mut self.blocks {
+            block.last = end_before(block.first, block.last);
+        }
+        for item in &mut self.items {
+            item.last_line = end_before(item.line, item.last_line);
         }
     }
 

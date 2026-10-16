@@ -24,7 +24,7 @@ Every release ships the `markright` command built for Linux, macOS and Windows. 
 run it:
 
 ```bash
-curl -fsSL https://github.com/vertyll/markright/releases/download/v0.2.0/markright-x86_64-unknown-linux-gnu.tar.gz | tar -xz
+curl -fsSL https://github.com/vertyll/markright/releases/download/v0.2.1/markright-x86_64-unknown-linux-gnu.tar.gz | tar -xz
 ./markright check
 ```
 
@@ -32,7 +32,7 @@ or build it with Cargo, from crates.io or from a tag of the repository:
 
 ```bash
 cargo install --locked markright
-cargo install --locked --git https://github.com/vertyll/markright --tag v0.2.0 markright
+cargo install --locked --git https://github.com/vertyll/markright --tag v0.2.1 markright
 ```
 
 ## Quick start

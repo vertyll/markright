@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/markright", "crates/markright-core", "crates/markright-wasm", "xtask"]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.99"
 authors = ["Mikołaj Gawron <gawrmiko@gmail.com>"]
@@ -12,7 +12,7 @@ repository = "https://github.com/vertyll/markright"
 homepage = "https://vertyll.github.io/markright/"
 
 [workspace.dependencies]
-markright-core = { path = "crates/markright-core", version = "0.2.0", default-features = false }
+markright-core = { path = "crates/markright-core", version = "0.2.1", default-features = false }
 cap-std = "4.0.3"
 clap = { version = "4.6.7", features = ["derive"] }
 ctrlc = "3.5.2"

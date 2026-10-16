@@ -18,7 +18,8 @@ impl Formatter for HorizontalRule {
     }
 
     /// With the style `---`, a rule right under a line of text stays as written, since there `---` underlines the text
-    /// into a heading; and so does a rule on the first line, since there `---` opens front matter.
+    /// into a heading; so does a rule on the first line, or right above a line of text, since there `---` can open
+    /// front matter, which a parser reading YAML blocks anywhere closes at the next `---`.
     fn apply(&self, document: &Document, settings: &Settings) -> Fix {
         let style = settings.horizontal_rule.style.as_str();
         let mut out = texts(document);
@@ -28,7 +29,8 @@ impl Formatter for HorizontalRule {
             .filter(|block| block.kind == BlockKind::Rule && block.depth == 0);
         for rule in rules {
             let index = rule.first - 1;
-            let misread = style.starts_with('-') && (rule.first == 1 || !document.is_blank(rule.first - 1));
+            let misread = style.starts_with('-')
+                && (rule.first == 1 || !document.is_blank(rule.first - 1) || !document.is_blank(rule.first + 1));
             if out[index] != style && !misread {
                 style.clone_into(&mut out[index]);
             }

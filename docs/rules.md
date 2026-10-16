@@ -94,8 +94,9 @@ written as two spaces.
   or a digit keeps `*`, since `_` does not mark emphasis inside a word.
 - `fence-marker` makes a fence longer when the code holds a line that the new fence would otherwise close on, and
   leaves a block that is never closed, or a backtick fence whose info string would hold a backtick.
-- `horizontal-rule` leaves a rule right under a line of text, or on the first line, as written when its style is
-  `---`: there `---` would underline the text into a heading, or open front matter.
+- `horizontal-rule` leaves a rule right under a line of text, on the first line, or right above a line of text, as
+  written when its style is `---`: there `---` would underline the text into a heading, or open front matter, which
+  a parser that reads YAML blocks anywhere closes at the next `---`.
 - `code-span-spacing` removes a space only when the code has one on each side, which a renderer drops anyway; a
   space on one side is part of the code, as in ` 9.`, and stays. Code that starts or ends with a backtick keeps
   its spaces, as in `` ` `` for a backtick, and so does a span written over more than one line.

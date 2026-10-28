@@ -349,7 +349,9 @@ fn a_list_ends_before_the_definitions_under_it() {
 
 #[test]
 fn blocks_have_kinds_lines_and_depths() {
-    let d = Document::parse("---\ntitle: x\n---\n\n# A\n\ntext\nmore\n\n> - item\n\n***\n\n    code\n\n| a |\n|---|\n");
+    let d = Document::parse(
+        "---\ntitle: x\n---\n\n# A\n\ntext\nmore\n\n> - item\n\n***\n\n    code\n\n| a |\n|---|\n\n[^n]: note\n",
+    );
     let got: Vec<(BlockKind, usize, usize, usize)> = d
         .blocks
         .iter()
@@ -366,9 +368,86 @@ fn blocks_have_kinds_lines_and_depths() {
             (BlockKind::Rule, 12, 12, 0),
             (BlockKind::IndentedCode, 14, 14, 0),
             (BlockKind::Table, 16, 17, 0),
+            (BlockKind::Footnote, 19, 19, 0),
+            (BlockKind::Paragraph, 19, 19, 1),
         ]
     );
     assert_eq!(code(&d)[..3], [true, true, true], "front matter is no prose");
+}
+
+#[test]
+fn labels_match_as_case_folding_matches_them() {
+    let d = Document::parse("[ẞ] [ﬁle] and[^ss]\n\n[SS]: /url\n[FILE]: /file\n[^ß]: note\n");
+    assert!(d.undefined_references.is_empty(), "{:?}", d.undefined_references);
+    assert_eq!(d.used_labels, HashSet::from(["ss".to_owned(), "file".to_owned()]));
+    assert_eq!(
+        d.definitions.keys().map(String::as_str).collect::<Vec<_>>(),
+        ["file", "ss"]
+    );
+    assert_eq!(d.footnote_references[0].label, d.footnote_definitions[0].label);
+}
+
+#[test]
+fn footnotes_know_their_labels_and_lines() {
+    let d = Document::parse("a[^One] b[^gone] \\[^escaped] \\\\[^after]\n\n[^one]: x\n\n> [^quoted]: y\n");
+    let labels = |references: &[Reference]| -> Vec<(String, usize)> {
+        references
+            .iter()
+            .map(|reference| (reference.label.clone(), reference.line))
+            .collect()
+    };
+    assert_eq!(labels(&d.footnote_references), [("one".to_owned(), 1)]);
+    assert_eq!(
+        labels(&d.footnote_definitions),
+        [("one".to_owned(), 3), ("quoted".to_owned(), 5)]
+    );
+    assert_eq!(
+        labels(&d.undefined_footnotes),
+        [("gone".to_owned(), 1), ("after".to_owned(), 1)]
+    );
+}
+
+/// The text of each emphasis written with a space inside its delimiters that `text` holds.
+fn spaced_emphasis(text: &str) -> Vec<String> {
+    let d = Document::parse(text);
+    d.spaced_emphasis
+        .iter()
+        .map(|span| d.lines[span.line - 1].text[span.columns.clone()].to_owned())
+        .collect()
+}
+
+#[test]
+fn emphasis_with_a_space_inside_its_delimiters_is_found() {
+    assert_eq!(spaced_emphasis("this is ** important ** here"), ["** important **"]);
+    assert_eq!(spaced_emphasis("a **bold ** b and *it *"), ["**bold **", "*it *"]);
+    assert_eq!(
+        spaced_emphasis("an _ underlined phrase_ word"),
+        ["_ underlined phrase_"]
+    );
+    assert_eq!(spaced_emphasis("*** both ***"), ["*** both ***"]);
+    assert_eq!(spaced_emphasis("(** quoted **)"), ["** quoted **"]);
+}
+
+#[test]
+fn a_run_of_the_other_marker_inside_does_not_hide_the_spacing() {
+    assert_eq!(spaced_emphasis("** and __ mixed **"), ["** and __ mixed **"]);
+}
+
+#[test]
+fn what_is_no_emphasis_without_the_spaces_is_left_alone() {
+    for text in [
+        "2 * 3 * 4",
+        "the area is width * height * depth",
+        "files in src/* and lib/* are compiled",
+        "a * b",
+        "snake_case and other_name",
+        "*tight*",
+        "\\* not * marked",
+        "A \\** b ** c.",
+        "`** code **`",
+    ] {
+        assert_eq!(spaced_emphasis(text), [] as [String; 0], "{text:?}");
+    }
 }
 
 #[test]

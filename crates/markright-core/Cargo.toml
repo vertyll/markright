@@ -10,6 +10,8 @@ repository.workspace = true
 homepage.workspace = true
 keywords = ["markdown", "linter", "formatter"]
 categories = ["development-tools", "text-processing"]
+# The examples of the CommonMark and GFM specifications are under CC BY-SA 4.0, and only the repository's tests read them.
+exclude = ["tests/spec", "tests/spec.rs"]
 
 [features]
 default = ["disk", "parallel"]

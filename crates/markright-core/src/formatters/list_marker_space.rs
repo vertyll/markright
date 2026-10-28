@@ -1,6 +1,6 @@
 //! The list-marker-space formatter: one space between a list marker and the text of a one-line item.
 
-use super::{About, Fix, Formatter, Settings, by_line, texts};
+use super::{About, Edit, Fix, Formatter, Replacement, Settings, keeping_meaning};
 use crate::FIRST_RELEASE;
 use crate::markdown::Document;
 
@@ -21,18 +21,27 @@ impl Formatter for ListMarkerSpace {
     }
 
     /// Only items of one line change: moving the text of a longer one would move the column its other lines are
-    /// measured from.
+    /// measured from. A line below the item that the new column would take into it, though the old one left it out,
+    /// keeps the item as it is.
     fn apply(&self, document: &Document, _: &Settings) -> Fix {
-        let mut out = texts(document);
-        for item in &document.items {
-            let index = item.line - 1;
-            let after = item.column + item.marker.width();
-            let one_line = item.last_line == item.line && !document.lines[index].code;
-            let text_follows = out[index].len() > after + item.spaces;
-            if one_line && text_follows && (2..=MOST_SPACES).contains(&item.spaces) {
-                out[index].replace_range(after..after + item.spaces, " ");
-            }
-        }
-        by_line(&document.lines, out)
+        let edits: Vec<Edit> = document
+            .items
+            .iter()
+            .filter_map(|item| {
+                let index = item.line - 1;
+                let line = &document.lines[index];
+                let after = item.column + item.marker.width();
+                let one_line = item.last_line == item.line && !line.code;
+                let text_follows = line.text.len() > after + item.spaces;
+                (one_line && text_follows && (2..=MOST_SPACES).contains(&item.spaces)).then(|| {
+                    vec![Replacement {
+                        line: index,
+                        bytes: after..after + item.spaces,
+                        text: " ".to_owned(),
+                    }]
+                })
+            })
+            .collect();
+        keeping_meaning(document, &edits)
     }
 }

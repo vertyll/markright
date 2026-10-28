@@ -103,4 +103,8 @@ keep one. The rest is in [Configuration](docs/configuration.md), and every forma
 
 ## License
 
-markright is released under the [MIT License](LICENSE).
+markright is released under the [MIT License](LICENSE). The examples of the CommonMark and GFM specifications that its
+tests run over, in `crates/markright-core/tests/spec`, are by John MacFarlane and GitHub and stay under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the
+[`LICENSE`](crates/markright-core/tests/spec/LICENSE) beside them names their sources and holds the license, and none of
+them is part of the published crates.

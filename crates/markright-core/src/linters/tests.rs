@@ -6,9 +6,10 @@ use std::sync::Mutex;
 use super::settings::{Index, LineLength};
 use super::{
     ALL, Context, Kind, Linter, Repo, Settings, alerts, anchors, blank_line_in_blockquote, blockquotes,
-    code_block_style, duplicate_definitions, duplicate_headings, emphasis_as_heading, fence_language, fences,
-    first_heading, heading_increment, heading_punctuation, heading_without_space, image_alt, index, line_length,
-    link_text, links, list_indent, readme_links, reversed_links, single_title, table_columns, unused_definitions,
+    code_block_style, duplicate_definitions, duplicate_headings, emphasis_as_heading, emphasis_spacing, fence_language,
+    fences, first_heading, footnotes, heading_increment, heading_punctuation, heading_without_space, image_alt, index,
+    line_length, link_destination, link_text, links, list_indent, readme_links, reversed_links, single_title,
+    table_columns, unused_definitions,
 };
 use crate::fs::{Files, is_markdown};
 use crate::markdown::Document;
@@ -333,7 +334,8 @@ fn empty_links() {
     let f = files(&[
         (
             "README.md",
-            "[no target]() [](README.md) [![badge](a.png)](README.md) [fine](README.md)\n",
+            "[no target]() [](README.md) [![badge](a.png)](README.md) [fine](README.md)\n\n\
+             [placeholder](#) [top](#readme) [](#)\n\n# Readme\n",
         ),
         ("a.png", ""),
     ]);
@@ -341,7 +343,10 @@ fn empty_links() {
         found(Linter::document(&links::Links), &repo(&f), "README.md"),
         [
             "README.md:1: link without a target: [no target]()",
-            "README.md:1: link without text: [](README.md)"
+            "README.md:1: link without text: [](README.md)",
+            "README.md:3: link to an empty fragment, which leads nowhere: [](#)",
+            "README.md:3: link to an empty fragment, which leads nowhere: [placeholder](#)",
+            "README.md:3: link without text: [](#)"
         ]
     );
 }
@@ -369,6 +374,84 @@ fn unused_definitions() {
         "a.md",
     );
     assert_eq!(found, ["a.md:7: unused definition: [unused]"]);
+}
+
+#[test]
+fn link_destination() {
+    check_lines(
+        Linter::document(&link_destination::LinkDestination),
+        &[
+            ("[a](my file.md)\n", &[1]),
+            ("![a](my image.png)\n", &[1]),
+            ("[a](file.md)\n", &[]),
+            ("[a](file.md \"Title\")\n", &[]),
+            ("[a](file.md 'Title')\n", &[]),
+            ("[a](file.md (Title))\n", &[]),
+            ("[a](<my file.md>)\n", &[]),
+            ("[a](my%20file.md)\n", &[]),
+            ("`[a](my file.md)`\n", &[]),
+            ("```\n[a](my file.md)\n```\n", &[]),
+        ],
+    );
+    let f = files(&[("a.md", "See the [guide](docs/user guide.md).\n")]);
+    let found = found(Linter::document(&link_destination::LinkDestination), &repo(&f), "a.md");
+    assert_eq!(
+        found,
+        ["a.md:1: link with a space in its destination, which leaves it as text: [guide](docs/user guide.md)"]
+    );
+}
+
+#[test]
+fn emphasis_spacing() {
+    check_lines(
+        Linter::document(&emphasis_spacing::EmphasisSpacing),
+        &[
+            ("a ** b ** c\n", &[1]),
+            ("a **b** c\n", &[]),
+            ("x\n\n- an *item *\n", &[3]),
+            ("x\n\n- width * height * depth\n", &[]),
+            ("> a quoted __ phrase__\n", &[1]),
+            ("`** code **`\n", &[]),
+            ("```\n** fenced **\n```\n", &[]),
+            ("[** link text **](a.md)\n", &[]),
+            ("2 * 3 * 4\n", &[]),
+        ],
+    );
+    let f = files(&[("a.md", "Take a backup ** before ** the upgrade.\n")]);
+    let found = found(Linter::document(&emphasis_spacing::EmphasisSpacing), &repo(&f), "a.md");
+    assert_eq!(
+        found,
+        ["a.md:1: space inside emphasis, which renders as written: ** before **"]
+    );
+}
+
+#[test]
+fn footnotes() {
+    check_lines(
+        Linter::document(&footnotes::Footnotes),
+        &[
+            ("a[^1]\n\n[^1]: x\n", &[]),
+            ("a[^Note] b[^note]\n\n[^note]: x\n", &[]),
+            ("a[^missing]\n", &[1]),
+            ("a \\[^escaped]\n", &[]),
+            ("a `[^code]`\n", &[]),
+            ("```\n[^fenced]\n```\n", &[]),
+            ("a[^1]\n\n[^1]: x\n[^1]: y\n", &[4]),
+            ("a[^1]\n\n[^1]: x\n[^2]: y\n", &[4]),
+            ("a[^1]\n\n> [^1]: in a quote\n", &[]),
+            ("a[^1]\n\n[^1]: First\n    with more.\n", &[]),
+        ],
+    );
+    let f = files(&[("a.md", "a[^1] b[^gone]\n\n[^1]: x\n[^1]: y\n[^old]: z\n")]);
+    let found = found(Linter::document(&footnotes::Footnotes), &repo(&f), "a.md");
+    assert_eq!(
+        found,
+        [
+            "a.md:1: undefined footnote: [^gone]",
+            "a.md:4: [^1] is already defined on line 3",
+            "a.md:5: unused footnote: [^old]"
+        ]
+    );
 }
 
 /// Checks that `linter` reports, in each document alone in a repository, the lines its case lists.

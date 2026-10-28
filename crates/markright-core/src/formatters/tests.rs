@@ -321,6 +321,9 @@ fn list_marker_space() {
             ("-     code", "-     code"),
             ("-  a\n   b", "-  a\n   b"),
             ("-", "-"),
+            ("-    foo\n\n  bar", "-    foo\n\n  bar"),
+            ("-   a\n-    foo\n\n  bar", "- a\n-    foo\n\n  bar"),
+            ("-  -  foo", "- - foo"),
         ],
     );
 }
@@ -358,6 +361,9 @@ fn emphasis_marker() {
             ("___c___", "***c***"),
             ("snake_case_name", "snake_case_name"),
             ("`_code_`", "`_code_`"),
+            ("*_foo_*", "*_foo_*"),
+            ("foo _*_", "foo _*_"),
+            ("*_foo_* and _bar_", "*_foo_* and *bar*"),
         ],
     );
     let mut underscore = Settings::default();
@@ -504,6 +510,7 @@ fn table_pipes() {
             ("- x\n\n  a | b\n  --- | ---", "- x\n\n  | a | b |\n  | --- | --- |"),
             ("a | b\n--- | ---\nlazy", "| a | b |\n| --- | --- |\n| lazy |"),
             ("text | not a table", "text | not a table"),
+            ("[^n]: a | b\n    --- | ---", "[^n]: a | b\n    --- | ---"),
         ],
     );
 }
@@ -603,20 +610,20 @@ const PIECES: &[&str] = &[
     "Name:\tvalue",
     "a | b\n--- | ---\nc | d \\|",
     "x ` y ` and `` ` `` and ` `",
+    "a[^1] -> b\n\n[^1]: _note_ -> c\n    more   text",
+    "[^n]: -  item\n    *  other",
+    "[^n]: | a |\n    |---|",
 ];
 
 /// The formatters that change what a document says, not only how it is written: they are left out of the check that
 /// the HTML stays the same.
 const CHANGE_THE_TEXT: [&str; 4] = ["trailing-whitespace", "arrows", "link-spacing", "bare-urls"];
 
-/// The HTML `text` renders to, with its runs of white space made one space, as a browser shows them, and none at the
-/// end of a code block.
+/// The HTML `text` renders to, read with the extensions the parser reads, with its runs of white space made one space,
+/// as a browser shows them, and none at the end of a code block.
 fn rendered(text: &str) -> String {
     let mut html = String::new();
-    let options = pulldown_cmark::Options::ENABLE_TABLES
-        | pulldown_cmark::Options::ENABLE_STRIKETHROUGH
-        | pulldown_cmark::Options::ENABLE_TASKLISTS
-        | pulldown_cmark::Options::ENABLE_YAML_STYLE_METADATA_BLOCKS;
+    let options = crate::markdown::OPTIONS;
     pulldown_cmark::html::push_html(&mut html, pulldown_cmark::Parser::new_ext(text, options));
     html.split_whitespace()
         .collect::<Vec<_>>()

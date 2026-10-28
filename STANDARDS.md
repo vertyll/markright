@@ -7,6 +7,7 @@ The specifications this tool follows, what for, and where the documentation cove
 | [CommonMark 0.31.2][commonmark] | CommonMark Spec                            | parsing every document: blocks, code, links and their positions                 | [Code blocks](docs/mechanisms/code-blocks.md)                 |
 | [GFM 0.29][gfm]                 | GitHub Flavored Markdown Spec              | tables, strikethrough, task lists, and which plain URLs `bare-urls` makes links | [Rules: Formatters](docs/rules.md#formatters)                 |
 | [GitHub alerts][alerts]         | GitHub alert syntax                        | the allowed alert types                                                         | [Rules: Linters](docs/rules.md#linters)                       |
+| [GitHub footnotes][footnotes]   | GitHub footnote syntax                     | the footnotes the parser reads, which `footnotes` checks                        | [Rules: Linters](docs/rules.md#linters)                       |
 | [UAX #11][uax11]                | Unicode East Asian Width                   | which characters are two columns wide                                           | [Display width](docs/mechanisms/display-width.md)             |
 | [UTS #51][uts51]                | Unicode Emoji                              | emoji presentation and U+FE0F                                                   | [Display width](docs/mechanisms/display-width.md)             |
 | [YAML 1.2][yaml]                | YAML Ain't Markup Language 1.2             | `.markright.yaml` and YAML front matter                                         | [Configuration](docs/configuration.md)                        |
@@ -21,6 +22,7 @@ The specifications this tool follows, what for, and where the documentation cove
 [commonmark]: https://spec.commonmark.org/0.31.2/
 [gfm]: https://github.github.com/gfm/
 [alerts]: https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts
+[footnotes]: https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#footnotes
 [uax11]: https://www.unicode.org/reports/tr11/
 [uts51]: https://www.unicode.org/reports/tr51/
 [yaml]: https://yaml.org/spec/1.2.2/

@@ -2,7 +2,7 @@
 
 use super::{About, Fix, Formatter, Settings, by_line, texts};
 use crate::FIRST_RELEASE;
-use crate::markdown::Document;
+use crate::markdown::{BlockKind, Document};
 
 pub(super) struct TablePipes;
 
@@ -17,11 +17,17 @@ impl Formatter for TablePipes {
         }
     }
 
-    /// Leaves a table in a blockquote alone, where a `|` would have to go after the `>`.
+    /// Leaves a table in a blockquote alone, where a `|` would have to go after the `>`, and one that starts on the
+    /// line of a footnote's label, where it would have to go after the label.
     fn apply(&self, document: &Document, _: &Settings) -> Fix {
         let mut out = texts(document);
         for table in &document.tables {
-            if document.lines[table.header - 1].text.trim_start().starts_with('>') {
+            let quoted = document.lines[table.header - 1].text.trim_start().starts_with('>');
+            let after_label = document
+                .blocks
+                .iter()
+                .any(|block| block.kind == BlockKind::Footnote && block.first == table.header);
+            if quoted || after_label {
                 continue;
             }
             let rows = [table.header, table.header + 1]

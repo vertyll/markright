@@ -32,7 +32,7 @@ pub use fix::Fix;
 pub use rule::{About, Formatter};
 pub use settings::Settings;
 
-use fix::{by_line, each_prose_line, texts};
+use fix::{Edit, Replacement, by_line, each_prose_line, keeping_meaning, texts};
 
 /// Every formatter, in the order they run. Tabs go first, so the others see spaces; those that remove or add lines
 /// come last.

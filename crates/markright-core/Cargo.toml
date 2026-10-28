@@ -10,8 +10,10 @@ repository.workspace = true
 homepage.workspace = true
 keywords = ["markdown", "linter", "formatter"]
 categories = ["development-tools", "text-processing"]
-# The examples of the CommonMark and GFM specifications are under CC BY-SA 4.0, and only the repository's tests read them.
-exclude = ["tests/spec", "tests/spec.rs"]
+# The integration tests read files of the repository around the crate: the JSON schema at its root, and the examples
+# of the CommonMark and GFM specifications, which are under CC BY-SA 4.0. They run in the repository, not from the
+# published crate.
+exclude = ["tests"]
 
 [features]
 default = ["disk", "parallel"]

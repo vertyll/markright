@@ -11,19 +11,24 @@ use super::anchors::Anchors;
 use super::lines::LineIndex;
 use super::{
     Block, BlockKind, Definition, Document, Emphasis, Fence, Heading, ItemMarker, Line, Link, LinkKind, ListItem,
-    Marker, Reference, Span, Table, destination, normalize_label,
+    Marker, Reference, Span, Table, destination, is_escaped, normalize_label, spaced_emphasis,
 };
 
-/// The extensions GFM adds that change what a document holds: tables, strikethrough and task lists; and front matter,
-/// which no rule reads as Markdown. Alerts are left to the alerts linter, which needs to see their tags.
-const OPTIONS: Options = Options::ENABLE_TABLES
+/// The extensions GFM adds that change what a document holds: tables, strikethrough, task lists and footnotes; and
+/// front matter, which no rule reads as Markdown. Alerts are left to the alerts linter, which needs to see their tags.
+pub(crate) const OPTIONS: Options = Options::ENABLE_TABLES
     .union(Options::ENABLE_STRIKETHROUGH)
     .union(Options::ENABLE_TASKLISTS)
+    .union(Options::ENABLE_FOOTNOTES)
     .union(Options::ENABLE_YAML_STYLE_METADATA_BLOCKS)
     .union(Options::ENABLE_PLUSES_DELIMITED_METADATA_BLOCKS);
 
 /// A URL with a scheme, as GFM finds one in plain text, before its trailing punctuation is cut off.
 static URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://[^\s<>`]+").expect("the URL pattern is valid"));
+
+/// A footnote reference written as text, `[^label]`: what the parser leaves of one whose label nothing defines.
+static FOOTNOTE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\[\^([^\]\s]+)\]").expect("the footnote pattern is valid"));
 
 /// A line that starts a reference definition, after any blockquote markers and the marker of a list item: its label.
 static DEFINITION: LazyLock<Regex> = LazyLock::new(|| {
@@ -132,6 +137,8 @@ struct Walker<'a> {
     used_labels: HashSet<String>,
     lazy_lines: Vec<usize>,
     unclosed_fence: Option<usize>,
+    footnote_definitions: Vec<Reference>,
+    footnote_references: Vec<Reference>,
     /// Where each list is in the source, by index.
     lists: Vec<Range<usize>>,
     /// The lists that follow another list with no block between them, as the indexes of both.
@@ -166,6 +173,8 @@ impl<'a> Walker<'a> {
             used_labels: HashSet::new(),
             lazy_lines: Vec::new(),
             unclosed_fence: None,
+            footnote_definitions: Vec::new(),
+            footnote_references: Vec::new(),
             lists: Vec::new(),
             neighbors: Vec::new(),
             siblings: vec![Sibling::default()],
@@ -198,6 +207,13 @@ impl<'a> Walker<'a> {
             }
             Event::Html(html) => self.anchors.html(&html),
             Event::SoftBreak | Event::HardBreak => self.text(" ", &range),
+            Event::FootnoteReference(label) => {
+                self.touch(&range);
+                self.footnote_references.push(Reference {
+                    label: normalize_label(&label),
+                    line: self.index.line(range.start) + 1,
+                });
+            }
             Event::Rule => {
                 self.sibling(None);
                 self.block(BlockKind::Rule, &range);
@@ -271,6 +287,7 @@ impl<'a> Walker<'a> {
                 self.item(&range);
                 self.containers += 1;
             }
+            Tag::FootnoteDefinition(label) => self.footnote_definition(&label, &range),
             Tag::Emphasis => self.emphasis(&range, false),
             Tag::Strong => self.emphasis(&range, true),
             Tag::TableHead => {
@@ -317,7 +334,7 @@ impl<'a> Walker<'a> {
                 self.blockquotes -= 1;
                 self.containers -= 1;
             }
-            TagEnd::List(_) | TagEnd::Item => self.containers -= 1,
+            TagEnd::List(_) | TagEnd::Item | TagEnd::FootnoteDefinition => self.containers -= 1,
             TagEnd::CodeBlock | TagEnd::HtmlBlock | TagEnd::MetadataBlock(_) => self.literal = false,
             TagEnd::Image => {
                 self.images -= 1;
@@ -326,6 +343,16 @@ impl<'a> Walker<'a> {
             }
             _ => {}
         }
+    }
+
+    /// Records the footnote definition of `label` at `range`, a container of the blocks it holds.
+    fn footnote_definition(&mut self, label: &str, range: &Range<usize>) {
+        self.block(BlockKind::Footnote, range);
+        self.containers += 1;
+        self.footnote_definitions.push(Reference {
+            label: normalize_label(label),
+            line: self.index.line(range.start) + 1,
+        });
     }
 
     fn sibling(&mut self, list: Option<usize>) {
@@ -625,6 +652,8 @@ impl<'a> Walker<'a> {
         let duplicate_definitions = self.duplicate_definitions(&spans, &definitions);
         let items = self.mark_adjacent(&spans);
         let bare_urls = self.bare_urls();
+        let undefined_footnotes = self.undefined_footnotes();
+        let spaced_emphasis = self.spaced_emphasis();
         self.links.sort_by_key(|(start, _)| *start);
         let all_links = self
             .links
@@ -654,6 +683,7 @@ impl<'a> Walker<'a> {
             fences: self.fences,
             items,
             emphasis: self.emphasis,
+            spaced_emphasis,
             bare_urls,
             code_spans: self.code_spans,
             tables: self.tables,
@@ -662,6 +692,9 @@ impl<'a> Walker<'a> {
             duplicate_definitions,
             used_labels: self.used_labels,
             undefined_references,
+            footnote_definitions: self.footnote_definitions,
+            footnote_references: self.footnote_references,
+            undefined_footnotes,
             lazy_lines: self.lazy_lines,
             unclosed_fence: self.unclosed_fence,
         }
@@ -703,10 +736,12 @@ impl<'a> Walker<'a> {
     /// of a label it knows.
     fn duplicate_definitions(&self, kept: &[&Range<usize>], known: &BTreeMap<String, Definition>) -> Vec<Reference> {
         let mut covered = vec![false; self.index.count()];
-        let leaves = self
-            .blocks
-            .iter()
-            .filter(|block| !matches!(block.kind, BlockKind::List | BlockKind::BlockQuote));
+        let leaves = self.blocks.iter().filter(|block| {
+            !matches!(
+                block.kind,
+                BlockKind::List | BlockKind::BlockQuote | BlockKind::Footnote
+            )
+        });
         for block in leaves {
             covered[block.first - 1..block.last].fill(true);
         }
@@ -740,6 +775,37 @@ impl<'a> Walker<'a> {
             }
         }
         urls
+    }
+
+    /// The emphasis in the prose written with a space just inside its delimiters.
+    fn spaced_emphasis(&self) -> Vec<Span> {
+        self.prose
+            .iter()
+            .flat_map(|range| {
+                spaced_emphasis::find(self.source, range)
+                    .into_iter()
+                    .filter_map(|found| self.span(found))
+            })
+            .collect()
+    }
+
+    /// The footnote references the parser left as text, since no definition has their label: `[^label]` in the prose,
+    /// unless its bracket is escaped. The prose leaves out the backslash of an escape, so the source is asked.
+    fn undefined_footnotes(&self) -> Vec<Reference> {
+        let mut found = Vec::new();
+        for range in &self.prose {
+            let prose = &self.source[range.clone()];
+            for captures in FOOTNOTE.captures_iter(prose) {
+                let whole = captures.get(0).expect("a match has its whole text");
+                if !is_escaped(self.source, range.start + whole.start()) {
+                    found.push(Reference {
+                        label: normalize_label(&captures[1]),
+                        line: self.index.line(range.start + whole.start()) + 1,
+                    });
+                }
+            }
+        }
+        found
     }
 
     /// The items, each marked when its list stands next to another list. The parser gives no event for a reference

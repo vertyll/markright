@@ -15,15 +15,18 @@ mod code_block_style;
 mod duplicate_definitions;
 mod duplicate_headings;
 mod emphasis_as_heading;
+mod emphasis_spacing;
 mod fence_language;
 mod fences;
 mod first_heading;
+mod footnotes;
 mod heading_increment;
 mod heading_punctuation;
 mod heading_without_space;
 mod image_alt;
 mod index;
 mod line_length;
+mod link_destination;
 mod link_text;
 mod links;
 mod list_indent;
@@ -52,7 +55,9 @@ pub static ALL: &[Linter] = &[
     Linter::document(&anchors::Anchors),
     Linter::document(&unused_definitions::UnusedDefinitions),
     Linter::document(&duplicate_definitions::DuplicateDefinitions),
+    Linter::document(&footnotes::Footnotes),
     Linter::document(&reversed_links::ReversedLinks),
+    Linter::document(&link_destination::LinkDestination),
     Linter::document(&link_text::LinkText),
     Linter::document(&alerts::Alerts),
     Linter::document(&blockquotes::Blockquotes),
@@ -67,6 +72,7 @@ pub static ALL: &[Linter] = &[
     Linter::document(&duplicate_headings::DuplicateHeadings),
     Linter::document(&heading_punctuation::HeadingPunctuation),
     Linter::document(&emphasis_as_heading::EmphasisAsHeading),
+    Linter::document(&emphasis_spacing::EmphasisSpacing),
     Linter::document(&list_indent::ListIndent),
     Linter::document(&image_alt::ImageAlt),
     Linter::document(&table_columns::TableColumns),

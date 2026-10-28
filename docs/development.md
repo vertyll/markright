@@ -11,7 +11,8 @@ bash scripts/check.sh
 1. `cargo fmt --check`, with the style of `rustfmt.toml`;
 2. `cargo clippy`, with every pedantic lint, on the workspace, on the library without its features, and on the
    playground compiled to WebAssembly when that target is installed;
-3. the tests of every crate, the schema, the examples and the tables of the documentation included;
+3. the tests of every crate, the schema, the examples and the tables of the documentation included, and every rule
+   run over the examples of the CommonMark and GFM specifications, in `crates/markright-core/tests/spec`;
 4. `cargo doc`, which fails on a broken link or tag in the API documentation;
 5. `markright check` on this repository's own documents;
 6. the type check, Biome's formatting and lints and the tests of the site's scripts and styles, with the scripts'

@@ -1,4 +1,5 @@
-//! The links linter: relative links lead to files inside the repository, and every link has a target and text.
+//! The links linter: relative links lead to files inside the repository, and every link has a target and text; a
+//! target of `#` alone is none.
 
 use super::settings::targeted;
 use super::{About, Context, DocumentLinter, EXAMPLE_GUIDE, Example, escapes, targets};
@@ -49,12 +50,21 @@ impl DocumentLinter for Links {
                         format!("link without a target: [{text}]()"),
                     ));
                 }
-                LinkKind::Inline { has_content: false, .. } => {
-                    out.push(Finding::new(
-                        path,
-                        link.line,
-                        format!("link without text: []({})", link.target),
-                    ));
+                LinkKind::Inline { text, has_content } => {
+                    if link.target == "#" {
+                        out.push(Finding::new(
+                            path,
+                            link.line,
+                            format!("link to an empty fragment, which leads nowhere: [{text}](#)"),
+                        ));
+                    }
+                    if !has_content {
+                        out.push(Finding::new(
+                            path,
+                            link.line,
+                            format!("link without text: []({})", link.target),
+                        ));
+                    }
                 }
                 _ => {}
             }

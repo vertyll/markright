@@ -11,8 +11,10 @@ use super::walker;
 
 /// A parsed Markdown file.
 ///
-/// Line numbers are 1-based, as issues report them; indexes into [`Document::lines`] are 0-based.
+/// Line numbers are 1-based, as issues report them; indexes into [`Document::lines`] are 0-based. Only
+/// [`Document::parse`] makes one, so a field added later breaks no one.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Document {
     /// The lines of the file, without their line endings.
     pub lines: Vec<Line>,
@@ -28,6 +30,9 @@ pub struct Document {
     pub items: Vec<ListItem>,
     /// The emphasis and strong emphasis, in the order they start.
     pub emphasis: Vec<Emphasis>,
+    /// The emphasis written with a space just inside its delimiters, `** text **`, which renders as the text it is
+    /// written as, in order.
+    pub spaced_emphasis: Vec<Span>,
     /// The URLs written as plain text, outside any link, in order.
     pub bare_urls: Vec<Span>,
     /// The code spans written on one line, their backticks included, in order.
@@ -44,6 +49,12 @@ pub struct Document {
     pub used_labels: HashSet<String>,
     /// The full and collapsed reference links, `[text][label]` and `[label][]`, whose label nothing defines.
     pub undefined_references: Vec<Reference>,
+    /// The footnote definitions, `[^label]: text`, in order, a repeated label included.
+    pub footnote_definitions: Vec<Reference>,
+    /// The footnote references, `[^label]`, that a definition answers, in order.
+    pub footnote_references: Vec<Reference>,
+    /// The footnote references whose label no definition has, which render as the text they are written as.
+    pub undefined_footnotes: Vec<Reference>,
     /// The lines that continue a blockquote's paragraph without starting with `>`.
     pub lazy_lines: Vec<usize>,
     /// The line of the first fenced code block that is never closed.
@@ -93,8 +104,9 @@ pub struct Block {
     pub depth: usize,
 }
 
-/// What a [`Block`] is.
+/// What a [`Block`] is. Kinds may be added, as the parser learns new blocks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum BlockKind {
     /// A paragraph.
     Paragraph,
@@ -116,6 +128,8 @@ pub enum BlockKind {
     Rule,
     /// A front matter block, in YAML between `---` or in TOML between `+++`, at the very start of the document.
     Metadata,
+    /// A footnote definition, `[^label]: text`, which holds the blocks of the footnote.
+    Footnote,
 }
 
 /// A heading: its level, 1 to 6, its line, its text and the anchor it defines.
@@ -286,10 +300,11 @@ pub struct Definition {
     pub line: usize,
 }
 
-/// A reference link: the normalized label it names and the line it starts on.
+/// A reference link, a footnote reference or a footnote definition: the normalized label it names and the line it
+/// starts on.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Reference {
-    /// The label, lowercased, with its runs of white space collapsed to one space.
+    /// The label, case-folded, with its runs of white space collapsed to one space.
     pub label: String,
     /// The line the link starts on.
     pub line: usize,

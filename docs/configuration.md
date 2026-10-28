@@ -300,7 +300,7 @@ directory. Without any format, it writes text to standard output.
 the schema of the version in use, for example with the YAML language server's modeline:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/vertyll/markright/v0.2.2/jsonschema/markright.jsonschema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/vertyll/markright/v0.3.0/jsonschema/markright.jsonschema.json
 version: "1"
 ```
 
@@ -316,7 +316,7 @@ CI fetches the command of a pinned release, checks it against the release's `SHA
 code `1`:
 
 ```bash
-version=v0.2.2
+version=v0.3.0
 target=x86_64-unknown-linux-gnu
 base=https://github.com/vertyll/markright/releases/download/$version
 curl -fsSLO "$base/markright-$target.tar.gz"

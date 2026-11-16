@@ -1,4 +1,4 @@
-Mermaid 12.1.0, https://github.com/mermaid-js/mermaid, whose styles the diagrams of the site carry, as merman 0.9.0 draws them
+Mermaid 12.3.0, https://github.com/mermaid-js/mermaid, whose styles the diagrams of the site carry, as merman 0.10.0 draws them
 
 The MIT License (MIT)
 

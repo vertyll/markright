@@ -32,7 +32,7 @@ pub struct Streams<'a> {
 
 /// Why a report could not be written.
 #[derive(Debug, thiserror::Error)]
-#[error("writing the {format} report{}: {source}", path.as_ref().map(|path| format!(" to {}", path.display())).unwrap_or_default())]
+#[error("writing the {format} report{}: {source}", path.as_ref().map_or_default(|path| format!(" to {}", path.display())))]
 pub struct OutputError {
     /// The format.
     pub format: ReportFormat,

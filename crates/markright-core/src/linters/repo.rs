@@ -85,14 +85,11 @@ impl<'a> Repo<'a> {
 
     /// The files the document at `path` links, resolved.
     pub(super) fn linked(&self, path: &str) -> HashSet<String> {
-        self.docs
-            .get(path)
-            .map(|document| {
-                targets(path, document)
-                    .into_iter()
-                    .filter_map(|target| target.file)
-                    .collect()
-            })
-            .unwrap_or_default()
+        self.docs.get(path).map_or_default(|document| {
+            targets(path, document)
+                .into_iter()
+                .filter_map(|target| target.file)
+                .collect()
+        })
     }
 }

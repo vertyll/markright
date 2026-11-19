@@ -23,6 +23,7 @@ pub use exclusions::{ExclusionRule, FormatterExclusions, LinterExclusions};
 pub use output::{Destination, Format, Formats, Output, ReportFormat};
 pub use pattern::Pattern;
 pub use read::Syntax;
+pub(crate) use read::empty_as_default;
 
 use crate::{formatters, linters};
 
@@ -43,16 +44,16 @@ pub struct Config {
     #[schemars(schema_with = "schema::version")]
     pub version: String,
     /// Which files of the repository are its documents.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::config::empty_as_default")]
     pub documents: Documents,
     /// Where markright check writes issues; text to stdout when no format is set.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::config::empty_as_default")]
     pub output: Output,
     /// The linters that run, their settings and exclusions.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::config::empty_as_default")]
     pub linters: Linters,
     /// The formatters that run, their settings and exclusions.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::config::empty_as_default")]
     pub formatters: Formatters,
 }
 
@@ -81,10 +82,10 @@ pub struct Linters {
     #[schemars(schema_with = "schema::linter_names")]
     pub disable: Vec<String>,
     /// The settings of the linters that take any.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::config::empty_as_default")]
     pub settings: linters::Settings,
     /// The documents no linter reports on, and the issues to drop.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::config::empty_as_default")]
     pub exclusions: LinterExclusions,
 }
 
@@ -104,10 +105,10 @@ pub struct Formatters {
     #[schemars(schema_with = "schema::formatter_names")]
     pub disable: Vec<String>,
     /// The settings of the formatters that take any.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::config::empty_as_default")]
     pub settings: formatters::Settings,
     /// The documents the formatters leave as they are.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::config::empty_as_default")]
     pub exclusions: FormatterExclusions,
 }
 

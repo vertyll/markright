@@ -12,14 +12,19 @@ use crate::markdown::Marker;
 #[schemars(rename = "FormatterSettings")]
 pub struct Settings {
     /// The settings of list-marker.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub list_marker: ListMarker,
     /// The settings of ordered-list-numbers.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub ordered_list_numbers: OrderedListNumbers,
     /// The settings of emphasis-marker.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub emphasis_marker: EmphasisMarker,
     /// The settings of fence-marker.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub fence_marker: FenceMarker,
     /// The settings of horizontal-rule.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub horizontal_rule: HorizontalRule,
 }
 

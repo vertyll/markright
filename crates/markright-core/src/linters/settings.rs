@@ -15,18 +15,25 @@ use crate::config::Pattern;
 #[schemars(rename = "LinterSettings")]
 pub struct Settings {
     /// The settings of line-length.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub line_length: LineLength,
     /// The settings of index.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub index: Index,
     /// The settings of readme-links.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub readme_links: ReadmeLinks,
     /// The settings of alerts.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub alerts: Alerts,
     /// The settings of link-text.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub link_text: LinkText,
     /// The settings of links.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub links: Links,
     /// The settings of anchors.
+    #[serde(deserialize_with = "crate::config::empty_as_default")]
     pub anchors: Anchors,
 }
 

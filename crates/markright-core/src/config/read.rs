@@ -3,6 +3,7 @@
 use std::path::Path;
 
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Deserializer};
 
 use super::ConfigError;
 
@@ -64,4 +65,14 @@ fn toml_error(file: &str, text: &str, e: &toml::de::Error) -> ConfigError {
         line,
         message,
     }
+}
+
+/// Reads a section left empty, such as `linters:` with nothing under it, which YAML gives as null, as the section's
+/// defaults, as a section left out is.
+pub(crate) fn empty_as_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Default + Deserialize<'de>,
+{
+    Ok(Option::<T>::deserialize(deserializer)?.unwrap_or_default())
 }

@@ -66,6 +66,12 @@ fn empty_sections_are_the_defaults() {
 }
 
 #[test]
+fn an_empty_setting_is_its_default() {
+    let config = load("version: \"1\"\nlinters:\n  settings:\n    line-length:\n");
+    assert_eq!(max(&config), 120);
+}
+
+#[test]
 fn exclusions() {
     let config = load(
         "version: \"1\"\nlinters:\n  exclusions:\n    paths: ['^generated/']\n    rules:\n      - path: '^docs/legacy\\.md$'\n        \

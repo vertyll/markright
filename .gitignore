@@ -16,6 +16,8 @@ lcov.info
 
 ### SonarQube ###
 .scannerwork/
+.sonar/
+.sonarlint/
 
 ### Site ###
 site/content/
